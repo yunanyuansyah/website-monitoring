@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Website</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(
+          135deg,
+          #0a0a0a 0%,
+          #1a1a2e 50%,
+          #16213e 100%
+        );
+        color: white;
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: center;
+      }
+      .test-card {
+        background: rgba(26, 26, 46, 0.8);
+        border: 1px solid #00d4ff;
+        border-radius: 15px;
+        padding: 2rem;
+        margin: 2rem 0;
+      }
+      .btn {
+        background: #00d4ff;
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        margin: 0.5rem;
+      }
+      .btn:hover {
+        background: #0099cc;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🧪 Test Website Monitoring</h1>
+
+      <div class="test-card">
+        <h2>Status Website</h2>
+        <p>Website ini berfungsi dengan baik!</p>
+        <button class="btn" onclick="testAlert()">Test Alert</button>
+        <button class="btn" onclick="testConsole()">Test Console</button>
+      </div>
+
+      <div class="test-card">
+        <h2>Langkah Selanjutnya</h2>
+        <p>1. Buka <code>index.html</code> di browser</p>
+        <p>2. Tekan F12 untuk buka Console</p>
+        <p>3. Lihat error yang muncul</p>
+        <p>
+          4. Login dengan: <code>admin@sensor.com</code> / <code>admin123</code>
+        </p>
+      </div>
+
+      <div class="test-card">
+        <h2>Debug Info</h2>
+        <p>Browser: <span id="browserInfo"></span></p>
+        <p>Screen Size: <span id="screenSize"></span></p>
+        <p>Timestamp: <span id="timestamp"></span></p>
+      </div>
+    </div>
+
+    <script>
+      // Test functions
+      function testAlert() {
+        alert("✅ Alert berfungsi! Website JavaScript OK.");
+      }
+
+      function testConsole() {
+        console.log("✅ Console berfungsi! Website JavaScript OK.");
+        console.log("📊 Test data:", {
+          test: true,
+          message: "Website berfungsi",
+        });
+      }
+
+      // Display debug info
+      document.getElementById("browserInfo").textContent = navigator.userAgent;
+      document.getElementById(
+        "screenSize"
+      ).textContent = `${screen.width}x${screen.height}`;
+      document.getElementById("timestamp").textContent =
+        new Date().toLocaleString("id-ID");
+
+      console.log("🚀 Test website loaded successfully!");
+    </script>
+  </body>
+</html>

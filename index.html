@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sensor Monitoring System</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+      <div class="modal-content">
+        <div class="login-header">
+          <i class="fas fa-satellite-dish"></i>
+          <h2>Sensor Monitoring System</h2>
+          <p>Masuk ke dashboard monitoring</p>
+        </div>
+        <form id="loginForm" class="login-form">
+          <div class="input-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="email" placeholder="Email" />
+          </div>
+          <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="password" placeholder="Password" />
+          </div>
+          <button type="submit" class="login-btn">
+            <span>Masuk</span>
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </form>
+        <div class="demo-credentials">
+          <p>Demo: admin@sensor.com / admin123</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="dashboard hidden">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <i class="fas fa-satellite-dish"></i>
+          <h1>Sensor Monitoring System</h1>
+        </div>
+        <div class="header-right">
+          <div class="user-info">
+            <span id="userName">Admin</span>
+            <button id="logoutBtn" class="logout-btn">
+              <i class="fas fa-sign-out-alt"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-thermometer-half"></i>
+            </div>
+            <div class="stat-content">
+              <h3>Total Sensor</h3>
+              <p id="totalSensors">0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-content">
+              <h3>Data Hari Ini</h3>
+              <p id="todayData">0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-database"></i>
+            </div>
+            <div class="stat-content">
+              <h3>Total Data</h3>
+              <p id="totalData">0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+              <h3>Status</h3>
+              <p id="systemStatus" class="status-badge status-normal">Normal</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+              <h3>Update Terakhir</h3>
+              <p id="lastUpdate">-</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+          <div class="chart-container">
+            <div class="chart-header">
+              <h3>Monitoring Real-time</h3>
+              <div class="chart-controls">
+                <button
+                  id="acuanBakuBtn"
+                  class="control-btn"
+                  onclick="openAcuanBakuModal()"
+                >
+                  <i class="fas fa-cog"></i>
+                  <span>Acuan Baku</span>
+                </button>
+                <button id="refreshBtn" class="control-btn">
+                  <i class="fas fa-sync-alt"></i>
+                </button>
+                <select id="timeRange" class="time-select">
+                  <option value="1h">1 Jam</option>
+                  <option value="6h">6 Jam</option>
+                  <option value="24h">24 Jam</option>
+                  <option value="7d">7 Hari</option>
+                </select>
+              </div>
+            </div>
+            <div class="chart-content">
+              <canvas id="sensorChart"></canvas>
+            </div>
+
+            <!-- Chart Legend -->
+            <div class="chart-legend" id="chartLegend">
+              <div class="legend-item">
+                <div class="legend-color" style="background: #00d4ff"></div>
+                <span>Nilai Sensor</span>
+              </div>
+              <!-- Acuan baku legend will be populated here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="table-section">
+          <div class="table-header">
+            <h3>Data Sensor Terbaru</h3>
+            <div class="table-controls">
+              <input
+                type="text"
+                id="searchInput"
+                placeholder="Cari sensor..."
+                class="search-input"
+              />
+              <select id="sensorFilter" class="sensor-select">
+                <option value="">Semua Sensor</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-container">
+            <table id="sensorTable" class="sensor-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nama Sensor</th>
+                  <th>Tanggal</th>
+                  <th>Nilai</th>
+                  <th>Waktu</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="sensorTableBody">
+                <!-- Data will be populated here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Memuat data...</p>
+      </div>
+    </div>
+
+    <!-- Acuan Baku Modal -->
+    <div id="acuanBakuModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Kelola Acuan Baku</h2>
+          <button class="modal-close" onclick="closeAcuanBakuModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Acuan Baku List -->
+          <div class="acuan-list-section">
+            <div class="section-header">
+              <h3>Daftar Acuan Baku Saat Ini</h3>
+              <button class="btn-primary" onclick="showAddAcuanForm()">
+                <i class="fas fa-plus"></i> Tambah Baru
+              </button>
+            </div>
+
+            <div id="acuanBakuList" class="acuan-list">
+              <!-- Acuan baku items will be populated here -->
+            </div>
+          </div>
+
+          <!-- Add/Edit Form -->
+          <div id="acuanForm" class="acuan-form hidden">
+            <h3 id="formTitle">Tambah Acuan Baku Baru</h3>
+
+            <form id="acuanBakuForm" onsubmit="handleAcuanBakuSubmit(event)">
+              <input type="hidden" id="acuanId" value="" />
+
+              <div class="form-group">
+                <label for="acuanMin">Nilai Minimum (°C):</label>
+                <input type="number" id="acuanMin" step="0.1" required />
+              </div>
+
+              <div class="form-group">
+                <label for="acuanMax">Nilai Maksimum (°C):</label>
+                <input type="number" id="acuanMax" step="0.1" required />
+              </div>
+
+              <div class="form-group">
+                <label for="acuanStatus">Status (Opsional):</label>
+                <input
+                  type="text"
+                  id="acuanStatus"
+                  placeholder="Contoh: Normal, Waspada, Bahaya"
+                />
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn-primary">
+                  <i class="fas fa-save"></i> Simpan
+                </button>
+                <button
+                  type="button"
+                  class="btn-secondary"
+                  onclick="cancelAcuanForm()"
+                >
+                  <i class="fas fa-times"></i> Batal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
