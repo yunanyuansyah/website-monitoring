@@ -11,6 +11,24 @@ let chartRefreshInterval;
 let acuanBaku = [];
 let alertNotifications = [];
 
+// Cooling System Control Variables
+let coolingSystemState = {
+  isOn: false,
+  currentTemp: null,
+  tempSource: null,
+  status: 'idle',
+  thresholds: {
+    min: null,           // Minimum temperature from acuan baku
+    max: null            // Maximum temperature from acuan baku
+  },
+  alertState: {
+    isActive: false,
+    isAcknowledged: false,
+    audioInterval: null,
+    lastAlertTime: 0
+  }
+};
+
 // API Configuration
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -32,40 +50,530 @@ const searchInput = document.getElementById('searchInput');
 const sensorFilter = document.getElementById('sensorFilter');
 const sensorTableBody = document.getElementById('sensorTableBody');
 
-// Initialize the application
+// Temperature Info Section Elements
+const temperatureInfoSection = document.getElementById('temperatureInfoSection');
+const initialTempValue = document.getElementById('initialTempValue');
+const initialTempSource = document.getElementById('initialTempSource');
+const initialStatusIndicator = document.getElementById('initialStatusIndicator');
+const initialStatusText = document.getElementById('initialStatusText');
+const initialLastUpdate = document.getElementById('initialLastUpdate');
+
+// Global error handler
+window.addEventListener('error', function(e) {
+    console.error('❌ Global error caught:', e.error);
+    console.error('❌ Error details:', {
+        message: e.message,
+        filename: e.filename,
+        lineno: e.lineno,
+        colno: e.colno
+    });
+});
+
+// Unhandled promise rejection handler
+window.addEventListener('unhandledrejection', function(e) {
+    console.error('❌ Unhandled promise rejection:', e.reason);
+});
+
+// Fallback initialization if DOMContentLoaded doesn't fire
+if (document.readyState === 'loading') {
+    console.log('📝 Document still loading, waiting for DOMContentLoaded...');
+} else {
+    console.log('📝 Document already loaded, initializing immediately...');
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🔄 DOMContentLoaded fired after script load');
+    });
+}
+
+// Hide loading indicator function
+function hideLoadingIndicator() {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+        console.log('✅ Loading indicator hidden');
+    }
+}
+
+// Show loading indicator function
+function showLoadingIndicator() {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'flex';
+        console.log('🔄 Loading indicator shown');
+    }
+}
+
+// DOM Content Loaded handler
 document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
+    console.log('✅ DOM loaded successfully');
+    
+    try {
+        // Check if essential elements exist
+        const loginModal = document.getElementById('loginModal');
+        const registerModal = document.getElementById('registerModal');
+        const dashboard = document.getElementById('dashboard');
+        const temperatureInfoSection = document.getElementById('temperatureInfoSection');
+        
+        console.log('🔍 Essential elements check:', {
+            loginModal: !!loginModal,
+            registerModal: !!registerModal,
+            dashboard: !!dashboard,
+            temperatureInfoSection: !!temperatureInfoSection
+        });
+        
+        if (!loginModal || !registerModal || !dashboard || !temperatureInfoSection) {
+            throw new Error('Essential HTML elements not found');
+        }
+        
+        // Hide loading indicator
+        hideLoadingIndicator();
+        
+        // Initialize app
+        console.log('🚀 Initializing application...');
+        initializeApp();
+        
+    } catch (error) {
+        console.error('❌ Failed to initialize app:', error);
+        
+        // Hide loading indicator
+        hideLoadingIndicator();
+        
+        // Show error message on page
+        document.body.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: #1a1a2e;
+                color: #ff3b30;
+                padding: 2rem;
+                border-radius: 10px;
+                border: 2px solid #ff3b30;
+                text-align: center;
+                font-family: Arial, sans-serif;
+                z-index: 9999;
+            ">
+                <h2>❌ Error Loading Website</h2>
+                <p>${error.message}</p>
+                <p>Silakan buka Developer Console (F12) untuk detail error</p>
+                <button onclick="location.reload()" style="
+                    background: #ff3b30;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    margin-top: 1rem;
+                ">Reload Page</button>
+            </div>
+        `;
+    }
 });
 
 function initializeApp() {
-    // Check if user is already logged in
-    const savedUser = localStorage.getItem('sensorUser');
-    if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        showDashboard();
-    } else {
-        // Show login modal by default if not logged in
-        showLoginModal();
+    console.log('🚀 Initializing application...');
+    
+    try {
+        // Check if essential elements exist
+        const loginModal = document.getElementById('loginModal');
+        const registerModal = document.getElementById('registerModal');
+        const dashboard = document.getElementById('dashboard');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const timeRange = document.getElementById('timeRange');
+        const searchInput = document.getElementById('searchInput');
+        const sensorFilter = document.getElementById('sensorFilter');
+        
+        console.log('🔍 Essential elements check:', {
+            loginModal: !!loginModal,
+            registerModal: !!registerModal,
+            dashboard: !!dashboard,
+            loginForm: !!loginForm,
+            registerForm: !!registerForm,
+            logoutBtn: !!logoutBtn,
+            refreshBtn: !!refreshBtn,
+            timeRange: !!timeRange,
+            searchInput: !!searchInput,
+            sensorFilter: !!sensorFilter
+        });
+        
+        // Check critical elements
+        if (!loginModal || !registerModal || !dashboard) {
+            throw new Error('Critical HTML elements not found');
+        }
+        
+        // Setup enhanced input handling
+        console.log('🔧 Setting up input focus handling...');
+        setupInputFocusHandling();
+        
+        // Event listeners with null checks
+        if (loginForm) {
+            loginForm.addEventListener('submit', handleLogin);
+            console.log('✅ Login form event listener added');
+        } else {
+            console.warn('⚠️ Login form not found');
+        }
+        
+        if (registerForm) {
+            registerForm.addEventListener('submit', handleRegister);
+            console.log('✅ Register form event listener added');
+        } else {
+            console.warn('⚠️ Register form not found');
+        }
+        
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', handleLogout);
+            console.log('✅ Logout button event listener added');
+        } else {
+            console.warn('⚠️ Logout button not found');
+        }
+        
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', refreshData);
+            console.log('✅ Refresh button event listener added');
+        } else {
+            console.warn('⚠️ Refresh button not found');
+        }
+        
+        if (timeRange) {
+            timeRange.addEventListener('change', handleTimeRangeChange);
+            console.log('✅ Time range event listener added');
+        } else {
+            console.warn('⚠️ Time range not found');
+        }
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', handleSearch);
+            console.log('✅ Search input event listener added');
+        } else {
+            console.warn('⚠️ Search input not found');
+        }
+        
+        if (sensorFilter) {
+            sensorFilter.addEventListener('change', handleFilter);
+            console.log('✅ Sensor filter event listener added');
+        } else {
+            console.warn('⚠️ Sensor filter not found');
+        }
+        
+        // Test API connectivity
+        console.log('🌐 Testing API connectivity...');
+        testAPIConnectivity();
+        
+        // Initialize chart
+        console.log('📊 Initializing chart...');
+        initializeChart();
+        
+        console.log('✅ Application initialization completed');
+        
+        // Show temperature info section initially
+        showTemperatureInfoSection();
+        
+        // Check if user is already logged in and show appropriate view
+        console.log('🔐 Checking user login status...');
+        const savedUser = localStorage.getItem('sensorUser');
+        if (savedUser) {
+            try {
+                currentUser = JSON.parse(savedUser);
+                // Safety check for user data structure
+                if (currentUser && currentUser.name && currentUser.email) {
+                    console.log('👤 User found in localStorage:', currentUser.name);
+                    showDashboard();
+                } else {
+                    console.warn('⚠️ Invalid user data in localStorage:', currentUser);
+                    localStorage.removeItem('sensorUser');
+                    currentUser = null;
+                    // Keep showing temperature info section
+                }
+            } catch (parseError) {
+                console.error('❌ Error parsing saved user:', parseError);
+                localStorage.removeItem('sensorUser');
+                currentUser = null;
+                // Keep showing temperature info section
+            }
+        } else {
+            console.log('👤 No user found, showing temperature info section');
+            // Keep showing temperature info section
+        }
+        
+        // Start updating temperature info
+        startTemperatureInfoUpdates();
+        
+    } catch (error) {
+        console.error('❌ Failed to initialize app:', error);
+        throw error;
     }
-    
-    // Event listeners
-    loginForm.addEventListener('submit', handleLogin);
-    logoutBtn.addEventListener('click', handleLogout);
-    refreshBtn.addEventListener('click', refreshData);
-    timeRange.addEventListener('change', handleTimeRangeChange);
-    searchInput.addEventListener('input', handleSearch);
-    sensorFilter.addEventListener('change', handleFilter);
-    
-    // Initialize chart
-    initializeChart();
 }
 
-// Login functionality
+// Show temperature info section
+function showTemperatureInfoSection() {
+    console.log('🌡️ Showing temperature info section...');
+    
+    // Hide dashboard
+    if (dashboard) {
+        dashboard.classList.add('hidden');
+        console.log('✅ Dashboard hidden');
+    }
+    
+    // Hide login modal
+    if (loginModal) {
+        loginModal.classList.add('hidden');
+        loginModal.classList.remove('show');
+        console.log('✅ Login modal hidden');
+    }
+    
+    // Show temperature info section
+    if (temperatureInfoSection) {
+        temperatureInfoSection.style.display = 'flex';
+        console.log('✅ Temperature info section displayed');
+    }
+    
+    // Update temperature info immediately
+    updateTemperatureInfo();
+    
+    console.log('🌡️ Successfully switched to temperature info view');
+}
+
+// Start updating temperature info
+function startTemperatureInfoUpdates() {
+    console.log('🔄 Starting temperature info updates...');
+    
+    // Update immediately
+    updateTemperatureInfo();
+    
+    // Update every 10 seconds
+    setInterval(updateTemperatureInfo, 10000);
+}
+
+// Update temperature info display
+async function updateTemperatureInfo() {
+    try {
+        console.log('🌡️ Updating temperature info...');
+        
+        // Try to fetch latest sensor data
+        let latestTemp = null;
+        let tempSource = 'Unknown Sensor';
+        let status = 'Normal';
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/sensor-stats`);
+            if (response.ok) {
+                const stats = await response.json();
+                if (stats.latest_data && stats.latest_data.length > 0) {
+                    // Find temperature sensor data
+                    const tempData = stats.latest_data.find(item => 
+                        item.nama_sensor && 
+                        (item.nama_sensor.toLowerCase().includes('temp') || 
+                         item.nama_sensor.toLowerCase().includes('suhu') ||
+                         item.nama_sensor.toLowerCase().includes('dht'))
+                    );
+                    
+                    if (tempData) {
+                        latestTemp = tempData.nilai;
+                        tempSource = tempData.nama_sensor;
+                        
+                        // Determine status based on temperature
+                        if (latestTemp > 35) {
+                            status = 'High';
+                        } else if (latestTemp < 20) {
+                            status = 'Low';
+                        } else {
+                            status = 'Normal';
+                        }
+                        
+                        console.log(`✅ Temperature data updated: ${latestTemp}°C from ${tempSource}`);
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('⚠️ API call failed, using mock data:', error);
+            // Use mock data if API fails
+            latestTemp = Math.random() * 20 + 20; // Random temp between 20-40°C
+            tempSource = 'DHT11_Temp (Demo)';
+            status = 'Demo';
+        }
+        
+        // Update UI elements
+        if (initialTempValue) {
+            initialTempValue.textContent = latestTemp ? latestTemp.toFixed(1) : '--';
+        }
+        
+        if (initialTempSource) {
+            initialTempSource.textContent = tempSource;
+        }
+        
+        if (initialStatusText) {
+            initialStatusText.textContent = status;
+        }
+        
+        if (initialLastUpdate) {
+            initialLastUpdate.textContent = `Last update: ${new Date().toLocaleTimeString('id-ID')}`;
+        }
+        
+        // Update status indicator color
+        if (initialStatusIndicator) {
+            const statusIcon = initialStatusIndicator.querySelector('i');
+            if (statusIcon) {
+                if (status === 'High') {
+                    statusIcon.style.color = '#ff3b30';
+                } else if (status === 'Low') {
+                    statusIcon.style.color = '#00d4ff';
+                } else {
+                    statusIcon.style.color = '#34c759';
+                }
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Error updating temperature info:', error);
+    }
+}
+
+// Modal management functions
+function showLoginModal() {
+    console.log('🔐 Showing login modal...');
+    
+    // Hide temperature info section
+    if (temperatureInfoSection) {
+        temperatureInfoSection.style.display = 'none';
+    }
+    
+    // Show login modal
+    const loginModal = document.getElementById('loginModal');
+    if (loginModal) {
+        loginModal.classList.remove('hidden');
+        loginModal.classList.add('show');
+        console.log('✅ Login modal shown');
+    }
+}
+
+function showRegisterModal() {
+    document.getElementById('registerModal').classList.remove('hidden');
+    document.getElementById('loginModal').classList.add('hidden');
+    console.log('📝 Register modal shown');
+}
+
+function hideAllModals() {
+    document.getElementById('loginModal').classList.add('hidden');
+    document.getElementById('registerModal').classList.add('hidden');
+    console.log('🚫 All modals hidden');
+}
+
+// Enhanced input focus handling for both modals
+function setupInputFocusHandling() {
+    console.log('🔧 Setting up input focus handling...');
+    
+    const inputGroups = document.querySelectorAll('.input-group');
+    console.log('📝 Found input groups:', inputGroups.length);
+    
+    if (inputGroups.length === 0) {
+        console.warn('⚠️ No input groups found, skipping focus handling setup');
+        return;
+    }
+    
+    inputGroups.forEach((group, index) => {
+        const input = group.querySelector('input');
+        const select = group.querySelector('select');
+        const icon = group.querySelector('i');
+        
+        // Handle input elements
+        if (input) {
+            console.log(`📝 Setting up focus handling for input ${index + 1}:`, input.id || input.placeholder);
+            
+            input.addEventListener('focus', () => {
+                group.classList.add('focused');
+                group.classList.remove('error', 'success');
+            });
+            
+            input.addEventListener('blur', () => {
+                group.classList.remove('focused');
+                
+                // Validate on blur
+                if (input.value.trim()) {
+                    if (input.type === 'email') {
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (emailRegex.test(input.value.trim())) {
+                            group.classList.add('success');
+                            group.classList.remove('error');
+                        } else {
+                            group.classList.add('error');
+                            group.classList.remove('success');
+                        }
+                    } else if (input.type === 'password') {
+                        if (input.value.length >= 6) {
+                            group.classList.add('success');
+                            group.classList.remove('error');
+                        } else {
+                            group.classList.add('error');
+                            group.classList.remove('success');
+                        }
+                    } else {
+                        group.classList.add('success');
+                        group.classList.remove('error');
+                    }
+                } else {
+                    group.classList.remove('success', 'error');
+                }
+            });
+            
+            input.addEventListener('input', () => {
+                if (group.classList.contains('error')) {
+                    group.classList.remove('error');
+                }
+            });
+        }
+        
+        // Handle select elements
+        if (select) {
+            console.log(`📝 Setting up focus handling for select ${index + 1}:`, select.id || 'unnamed');
+            
+            select.addEventListener('focus', () => {
+                group.classList.add('focused');
+                group.classList.remove('error', 'success');
+            });
+            
+            select.addEventListener('blur', () => {
+                group.classList.remove('focused');
+                
+                // Validate on blur
+                if (select.value.trim()) {
+                    group.classList.add('success');
+                    group.classList.remove('error');
+                } else {
+                    group.classList.remove('success', 'error');
+                }
+            });
+            
+            select.addEventListener('change', () => {
+                if (group.classList.contains('error')) {
+                    group.classList.remove('error');
+                }
+                if (select.value.trim()) {
+                    group.classList.add('success');
+                }
+            });
+        }
+        
+        // Handle icon elements
+        if (icon) {
+            console.log(`📝 Found icon for input group ${index + 1}`);
+        }
+    });
+    
+    console.log('✅ Input focus handling setup completed');
+}
+
+// Enhanced login functionality with API integration and demo fallback
 async function handleLogin(e) {
     e.preventDefault();
     
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value.trim();
+    const loginBtn = document.querySelector('.login-btn');
+    
+    console.log('🔐 Login attempt for:', email);
     
     // Basic validation
     if (!email || !password) {
@@ -80,35 +588,125 @@ async function handleLogin(e) {
         return;
     }
     
-    showLoading();
+    // Show loading state
+    loginBtn.classList.add('loading');
+    loginBtn.innerHTML = '<div class="spinner"></div><span>Memproses...</span>';
+    loginBtn.disabled = true;
     
     try {
-        // For demo purposes, we'll use hardcoded credentials
-        // In production, this should call your authentication API
-        if (email === 'admin@sensor.com' && password === 'admin123') {
-            currentUser = {
-                name: 'Admin',
-                email: email,
-                status: 'Umum'
-            };
+        // Try API login first
+        let response;
+        try {
+            console.log('📡 Calling login API...');
+            response = await fetch(`${API_BASE_URL}/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email,
+                    password
+                })
+            });
+        } catch (fetchError) {
+            console.warn('⚠️ API login failed, trying demo mode:', fetchError);
             
-            localStorage.setItem('sensorUser', JSON.stringify(currentUser));
-            showDashboard();
-            showNotification('Login berhasil!', 'success');
-        } else {
+            // Fallback to demo mode
+            if (email === 'admin@sensor.com' && password === 'admin123') {
+                currentUser = {
+                    name: 'Admin',
+                    email: email,
+                    status: 'Umum'
+                };
+                localStorage.setItem('sensorUser', JSON.stringify(currentUser));
+                
+                showNotification('Login berhasil! (Demo Mode)', 'success');
+                
+                setTimeout(() => {
+                    showDashboard();
+                }, 500);
+                return;
+            }
+            
+            // Check demo users
+            const demoUsers = JSON.parse(localStorage.getItem('demoUsers') || '[]');
+            const demoUser = demoUsers.find(u => u.email === email);
+            
+            if (demoUser) {
+                // For demo users, accept any password (in real app, verify password)
+                currentUser = {
+                    ...demoUser,
+                    password: undefined // Don't store password
+                };
+                localStorage.setItem('sensorUser', JSON.stringify(currentUser));
+                
+                showNotification('Login berhasil! (Demo Mode)', 'success');
+                
+                setTimeout(() => {
+                    showDashboard();
+                }, 500);
+                return;
+            }
+            
             throw new Error('Email atau password salah');
         }
+        
+        // Handle API response
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Email atau password salah');
+        }
+        
+        const result = await response.json();
+        console.log('✅ API login successful:', result);
+        console.log('👤 Result structure:', {
+            hasMessage: !!result.message,
+            hasOperator: !!result.operator,
+            operatorData: result.operator
+        });
+        
+        // Set current user
+        currentUser = result.operator;
+        console.log('👤 Current user set to:', currentUser);
+        localStorage.setItem('sensorUser', JSON.stringify(currentUser));
+        
+        // Show success notification
+        showNotification(result.message || 'Login berhasil!', 'success');
+        
+        // Switch to dashboard
+        setTimeout(() => {
+            showDashboard();
+        }, 500);
+        
     } catch (error) {
+        console.error('❌ Login error:', error);
         showNotification(error.message, 'error');
     } finally {
-        hideLoading();
+        // Reset button state
+        loginBtn.classList.remove('loading');
+        loginBtn.innerHTML = '<span>Masuk</span><i class="fas fa-arrow-right"></i>';
+        loginBtn.disabled = false;
     }
 }
 
 function handleLogout() {
     currentUser = null;
     localStorage.removeItem('sensorUser');
-    showLoginModal();
+    
+    // Hide dashboard
+    if (dashboard) {
+        dashboard.classList.add('hidden');
+    }
+    
+    // Hide login modal
+    if (loginModal) {
+        loginModal.classList.add('hidden');
+        loginModal.classList.remove('show');
+    }
+    
+    // Show temperature info section
+    showTemperatureInfoSection();
+    
     showNotification('Logout berhasil!', 'success');
     
     // Clear intervals
@@ -116,14 +714,30 @@ function handleLogout() {
         clearInterval(refreshInterval);
         refreshInterval = null;
     }
-}
-
-function showLoginModal() {
-    loginModal.classList.remove('hidden');
-    dashboard.classList.add('hidden');
+    
+    console.log('🚪 User logged out, returned to temperature info section');
 }
 
 function showDashboard() {
+    // Safety check for currentUser
+    if (!currentUser || !currentUser.name) {
+        console.error('❌ currentUser is not properly set:', currentUser);
+        showNotification('Error: User data tidak valid', 'error');
+        return;
+    }
+    
+    // Hide temperature info section
+    if (temperatureInfoSection) {
+        temperatureInfoSection.style.display = 'none';
+    }
+    
+    // Hide login modal
+    if (loginModal) {
+        loginModal.classList.add('hidden');
+        loginModal.classList.remove('show');
+    }
+    
+    // Show dashboard
     loginModal.classList.add('hidden');
     dashboard.classList.remove('hidden');
     
@@ -135,6 +749,14 @@ function showDashboard() {
     
     // Start auto-refresh
     startAutoRefresh();
+    
+    // Initialize cooling system control
+    initializeCoolingSystem();
+    
+    // Log admin status after dashboard initialization
+    logAdminStatus();
+    
+    console.log('✅ Dashboard displayed, temperature info section hidden');
 }
 
 // Dashboard functionality
@@ -152,9 +774,18 @@ async function loadDashboardData() {
         
         console.log('📊 Sensor data response:', sensorDataResponse);
         console.log('📈 Stats response:', statsResponse);
+        console.log('📋 Acuan baku response:', acuanBakuResponse);
         
         sensorData = sensorDataResponse.data || [];
         console.log(`📝 Loaded ${sensorData.length} sensor records`);
+        
+        // Update acuan baku global variable
+        if (acuanBakuResponse && acuanBakuResponse.length > 0) {
+            acuanBaku = acuanBakuResponse;
+            console.log('📋 Acuan baku loaded:', acuanBaku);
+        } else {
+            console.warn('⚠️ No acuan baku data received');
+        }
         
         updateDashboardStats(statsResponse);
         updateSensorTable(sensorData);
@@ -168,6 +799,14 @@ async function loadDashboardData() {
             updateChartWithAcuanBaku(sensorData);
         }
         
+        // Force refresh acuan baku lines after chart update
+        setTimeout(() => {
+            if (acuanBaku && acuanBaku.length > 0) {
+                console.log('🔄 Force refreshing acuan baku lines after delay...');
+                forceRefreshAcuanBakuLines();
+            }
+        }, 1000);
+        
         // Update last update time
         lastUpdate.textContent = new Date().toLocaleTimeString('id-ID');
         
@@ -178,6 +817,9 @@ async function loadDashboardData() {
         
         // Start chart auto-refresh
         startChartAutoRefresh();
+        
+        // Update cooling system with latest sensor data
+        updateCoolingSystemWithSensorData(sensorData);
         
     } catch (error) {
         console.error('❌ Error loading dashboard data:', error);
@@ -663,13 +1305,13 @@ function processChartData(data) {
     // Sort data by time
     const sortedData = data.sort((a, b) => new Date(a.waktu) - new Date(a.waktu));
     
-    // Take only the latest 100 data points for smooth chart rendering
-    const chartData = sortedData.slice(-100);
+    // Take only the latest 50 data points for better spacing
+    const chartData = sortedData.slice(-50);
     
-    // If we have too many data points, sample them for smoother chart
+    // If we have too many data points, sample them for better spacing
     let finalData = chartData;
-    if (chartData.length > 30) { // Reduced from 50 to 30 for better performance
-        finalData = sampleDataForChart(chartData, 30);
+    if (chartData.length > 20) { // Reduced to 20 for better spacing
+        finalData = sampleDataForChart(chartData, 20);
     }
     
     // Create smooth labels with better formatting
@@ -685,8 +1327,24 @@ function processChartData(data) {
     
     const values = finalData.map(item => parseFloat(item.nilai));
     
+    // Calculate and expand Y-axis range for better spacing
+    const minVal = Math.min(...values);
+    const maxVal = Math.max(...values);
+    const range = maxVal - minVal;
+    
+    // If range is too small, expand it for better visualization
+    if (range < 1) {
+        const midPoint = (minVal + maxVal) / 2;
+        const expandedMin = Math.floor(midPoint - 1);
+        const expandedMax = Math.ceil(midPoint + 1);
+        
+        console.log(`📊 Expanding temperature range from ${range.toFixed(2)}°C to ${expandedMax - expandedMin}°C for better Y-axis spacing`);
+        console.log(`🌡️ Original range: ${minVal.toFixed(2)}°C - ${maxVal.toFixed(2)}°C`);
+        console.log(`🌡️ Expanded range: ${expandedMin}°C - ${expandedMax}°C`);
+    }
+    
     console.log(`📊 Chart data processed: ${finalData.length} points (from ${chartData.length} original)`);
-    console.log(`📈 Value range: ${Math.min(...values).toFixed(2)} - ${Math.max(...values).toFixed(2)}`);
+    console.log(`📈 Value range: ${minVal.toFixed(2)} - ${maxVal.toFixed(2)}`);
     console.log(`🕐 Time range: ${labels[0]} - ${labels[labels.length - 1]}`);
     
     return { labels, values };
@@ -710,6 +1368,7 @@ function sampleDataForChart(data, targetCount) {
     return sampled;
 }
 
+// Initialize Chart.js with acuan baku lines
 function initializeChart() {
     const ctx = document.getElementById('sensorChart').getContext('2d');
     
@@ -717,35 +1376,39 @@ function initializeChart() {
         type: 'line',
         data: {
             labels: [],
-            datasets: [
-                {
-                    label: 'Nilai Sensor',
-                    data: [],
-                    borderColor: '#00d4ff',
-                    backgroundColor: 'rgba(0, 212, 255, 0.15)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.3, // Smooth curve
-                    pointBackgroundColor: '#00d4ff',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4, // Smaller points for dense data
-                    pointHoverRadius: 6,
-                    pointHitRadius: 10
-                }
-            ]
+            datasets: [{
+                label: 'Nilai Sensor (°C)',
+                data: [],
+                borderColor: '#00d4ff',
+                backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                borderWidth: 3,
+                tension: 0.3,
+                pointRadius: 4,
+                pointBackgroundColor: '#00d4ff',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                fill: true
+            }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false, // Important: let us control the size
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
             plugins: {
                 legend: {
+                    display: true,
+                    position: 'top',
                     labels: {
                         color: '#ffffff',
                         font: {
-                            size: 14,
+                            size: 12,
                             weight: 'bold'
-                        }
+                        },
+                        usePointStyle: true,
+                        pointStyle: 'line'
                     }
                 },
                 tooltip: {
@@ -755,179 +1418,171 @@ function initializeChart() {
                     borderColor: '#00d4ff',
                     borderWidth: 1,
                     cornerRadius: 8,
-                    displayColors: false
+                    displayColors: true
                 }
             },
             scales: {
                 x: {
-                    ticks: {
-                        color: '#a0a0a0',
-                        font: {
-                            size: 11
-                        },
-                        maxTicksLimit: 8, // Reduce x-axis labels
-                        maxRotation: 45
-                    },
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)',
-                        drawBorder: false
-                    },
+                    display: true,
                     title: {
                         display: true,
                         text: 'Waktu',
                         color: '#ffffff',
                         font: {
-                            size: 12,
+                            size: 14,
                             weight: 'bold'
                         }
+                    },
+                    ticks: {
+                        color: '#a0a0a0',
+                        maxTicksLimit: 8,
+                        maxRotation: 45
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        drawBorder: false
                     }
                 },
                 y: {
-                    beginAtZero: false, // Don't start from 0
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Nilai (°C)',
+                        color: '#ffffff',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
                     ticks: {
                         color: '#a0a0a0',
-                        font: {
-                            size: 11
-                        },
                         callback: function(value) {
-                            return value.toFixed(1) + '°C';
+                            return value + '°C';
+                        },
+                        // Improve Y-axis spacing
+                        maxTicksLimit: 6, // Reduce number of ticks for better spacing
+                        stepSize: 0.5, // Force 0.5°C intervals
+                        padding: 15, // Add padding between labels
+                        font: {
+                            size: 12
                         }
                     },
                     grid: {
                         color: 'rgba(255, 255, 255, 0.1)',
                         drawBorder: false
                     },
-                    title: {
-                        display: true,
-                        text: 'Nilai Sensor (°C)',
-                        color: '#ffffff',
-                        font: {
-                            size: 12,
-                            weight: 'bold'
+                    beginAtZero: false,
+                    // Force better Y-axis range
+                    min: function(context) {
+                        const values = context.chart.data.datasets[0].data;
+                        if (values.length > 0) {
+                            const minVal = Math.min(...values);
+                            return Math.floor(minVal - 0.5); // Round down and add buffer
                         }
+                        return 0;
+                    },
+                    max: function(context) {
+                        const values = context.chart.data.datasets[0].data;
+                        if (values.length > 0) {
+                            const maxVal = Math.max(...values);
+                            return Math.ceil(maxVal + 0.5); // Round up and add buffer
+                        }
+                        return 100;
                     }
                 }
             },
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            },
-            animation: {
-                duration: 800,
-                easing: 'easeOutQuart'
-            },
             elements: {
+                point: {
+                    hoverRadius: 6,
+                    hoverBorderWidth: 3
+                },
                 line: {
-                    borderJoinStyle: 'round'
+                    borderWidth: 3
                 }
             }
         }
     });
     
-    // Add acuan baku lines after chart is created
+    // Add acuan baku lines after chart creation
     addAcuanBakuLines();
-    
-    // Update legend
     updateChartLegend();
 }
 
-// Add acuan baku lines to the chart
+// Add acuan baku lines to chart
 function addAcuanBakuLines() {
-    if (!sensorChart || !acuanBaku || acuanBaku.length === 0) {
+    if (!sensorChart) {
+        console.warn('❌ Chart not initialized yet');
         return;
     }
-
-    // Remove existing acuan baku datasets
+    
+    if (!acuanBaku || acuanBaku.length === 0) {
+        console.warn('❌ No acuan baku data available');
+        return;
+    }
+    
+    console.log('📊 Adding acuan baku lines to chart...');
+    console.log('📋 Acuan baku data:', acuanBaku);
+    
+    // Remove existing acuan baku datasets first
     sensorChart.data.datasets = sensorChart.data.datasets.filter(dataset => 
-        !dataset.label.includes('°C') || dataset.label === 'Nilai Sensor'
+        !dataset.label.includes('Max:') && !dataset.label.includes('Min:')
     );
-
-    // Add new lines for acuan baku
+    
     acuanBaku.forEach((acuan, index) => {
-        // Create horizontal line for min value
-        const minLine = {
-            type: 'line',
-            label: `Min: ${acuan.min}°C`,
+        console.log(`📏 Processing acuan ${index + 1}:`, acuan);
+        
+        // Add Max line (red dashed)
+        const maxDataset = {
+            label: `Max: ${acuan.nilai_max}°C`,
             data: [],
-            borderColor: getAcuanLineColor(index, 'min'),
-            borderDash: [8, 4], // Dashed line
-            borderWidth: 2,
-            fill: false,
+            borderColor: '#ff3b30',
+            backgroundColor: 'rgba(255, 59, 48, 0.1)',
+            borderWidth: 3,
+            borderDash: [8, 4], // Dashed line pattern
             tension: 0,
             pointRadius: 0,
             pointHoverRadius: 0,
-            pointHitRadius: 0
-        };
-
-        // Create horizontal line for max value
-        const maxLine = {
-            type: 'line',
-            label: `Max: ${acuan.max}°C`,
-            data: [],
-            borderColor: getAcuanLineColor(index, 'max'),
-            borderDash: [8, 4], // Dashed line
-            borderWidth: 2,
             fill: false,
+            order: 1 // Ensure acuan lines are drawn on top
+        };
+        
+        // Add Min line (red dashed)
+        const minDataset = {
+            label: `Min: ${acuan.nilai_min}°C`,
+            data: [],
+            borderColor: '#ff3b30',
+            backgroundColor: 'rgba(255, 59, 48, 0.1)',
+            borderWidth: 3,
+            borderDash: [8, 4], // Dashed line pattern
             tension: 0,
             pointRadius: 0,
             pointHoverRadius: 0,
-            pointHitRadius: 0
+            fill: false,
+            order: 1 // Ensure acuan lines are drawn on top
         };
-
-        // Add to datasets
-        sensorChart.data.datasets.push(minLine, maxLine);
+        
+        sensorChart.data.datasets.push(maxDataset, minDataset);
+        console.log(`✅ Added Max and Min lines for acuan ${index + 1}`);
     });
-
-    console.log(`📏 Added ${acuanBaku.length * 2} acuan baku lines to chart`);
+    
+    console.log(`✅ Total datasets after adding acuan baku: ${sensorChart.data.datasets.length}`);
+    console.log('📊 Current datasets:', sensorChart.data.datasets.map(d => d.label));
+    
+    // Force chart update
+    sensorChart.update();
 }
 
-// Get color for acuan baku lines based on priority
-function getAcuanLineColor(index, type) {
-    const colors = [
-        { min: 'rgba(52, 199, 89, 0.6)', max: 'rgba(52, 199, 89, 0.6)' }, // Green - Normal
-        { min: 'rgba(255, 149, 0, 0.6)', max: 'rgba(255, 149, 0, 0.6)' }, // Orange - Waspada
-        { min: 'rgba(255, 59, 48, 0.6)', max: 'rgba(255, 59, 48, 0.6)' }  // Red - Bahaya
-    ];
-    
-    return colors[index] ? colors[index][type] : 'rgba(255, 255, 255, 0.4)';
-}
-
-// Update chart with acuan baku lines
-function updateChartWithAcuanBaku(data) {
-    if (!sensorChart) return;
-    
-    const chartData = processChartData(data);
-    
-    if (chartData.labels.length === 0) {
-        console.warn('No chart data processed');
-        return;
-    }
-    
-    // Update main sensor data
-    sensorChart.data.labels = chartData.labels;
-    sensorChart.data.datasets[0].data = chartData.values;
-    sensorChart.data.datasets[0].label = 'Nilai Sensor (°C)';
-    
-    // Update acuan baku lines with proper data points
-    updateAcuanBakuLineData(chartData.labels);
-    
-    // Update chart
-    sensorChart.update('active');
-    
-    console.log(`✅ Chart updated with ${chartData.labels.length} data points and acuan baku lines`);
-}
-
-// Update acuan baku line data to span across all time labels
+// Update acuan baku line data
 function updateAcuanBakuLineData(labels) {
-    if (!acuanBaku || acuanBaku.length === 0) return;
+    if (!sensorChart || !acuanBaku || acuanBaku.length === 0) return;
     
-    // Find acuan baku datasets (lines with °C in label)
+    // Find acuan baku datasets (lines with Max/Min in label)
     const acuanDatasets = sensorChart.data.datasets.filter(dataset => 
-        dataset.label.includes('°C') && dataset.label !== 'Nilai Sensor (°C)'
+        dataset.label.includes('Max:') || dataset.label.includes('Min:')
     );
     
     acuanDatasets.forEach(dataset => {
-        // Extract the value from label (e.g., "Min: 20.0°C" -> 20.0)
+        // Extract the value from label (e.g., "Max: 20.0°C" -> 20.0)
         const valueMatch = dataset.label.match(/(\d+\.?\d*)°C/);
         if (valueMatch) {
             const value = parseFloat(valueMatch[1]);
@@ -935,56 +1590,71 @@ function updateAcuanBakuLineData(labels) {
             dataset.data = new Array(labels.length).fill(value);
         }
     });
+    
+    console.log('✅ Updated acuan baku line data');
 }
 
-// Refresh acuan baku lines on chart
+// Force refresh acuan baku lines
+function forceRefreshAcuanBakuLines() {
+    if (!sensorChart) {
+        console.warn('❌ Chart not initialized');
+        return;
+    }
+    
+    console.log('🔄 Force refreshing acuan baku lines...');
+    
+    // Remove all existing acuan baku datasets
+    sensorChart.data.datasets = sensorChart.data.datasets.filter(dataset => 
+        !dataset.label.includes('Max:') && !dataset.label.includes('Min:')
+    );
+    
+    console.log('✅ Removed existing acuan baku lines');
+    console.log('📊 Remaining datasets:', sensorChart.data.datasets.map(d => d.label));
+    
+    // Re-add acuan baku lines
+    if (acuanBaku && acuanBaku.length > 0) {
+        addAcuanBakuLines();
+        
+        // Update line data if we have labels
+        if (sensorChart.data.labels.length > 0) {
+            updateAcuanBakuLineData(sensorChart.data.labels);
+        }
+        
+        // Force chart update
+        sensorChart.update();
+        console.log('✅ Acuan baku lines refreshed and chart updated');
+    } else {
+        console.warn('⚠️ No acuan baku data to add');
+        sensorChart.update();
+    }
+}
+
+// Enhanced refresh acuan baku lines
 function refreshAcuanBakuLines() {
     if (!sensorChart) return;
     
-    // Remove existing acuan baku lines
+    console.log('🔄 Refreshing acuan baku lines...');
+    
+    // Remove existing acuan baku datasets
     sensorChart.data.datasets = sensorChart.data.datasets.filter(dataset => 
-        !dataset.label.includes('°C') || dataset.label === 'Nilai Sensor'
+        !dataset.label.includes('Max:') && !dataset.label.includes('Min:')
     );
     
-    // Add new lines
+    // Re-add acuan baku lines
     addAcuanBakuLines();
     
-    // Update chart
-    if (sensorChart.data.labels.length > 0) {
-        updateAcuanBakuLineData(sensorChart.data.labels);
-        sensorChart.update('active');
-    }
-    
-    console.log('🔄 Acuan baku lines refreshed');
+    console.log('✅ Refreshed acuan baku lines');
 }
 
-// Update chart legend with acuan baku information
+// Update chart legend to include acuan baku
 function updateChartLegend() {
-    const legendContainer = document.getElementById('chartLegend');
-    if (!legendContainer || !acuanBaku || acuanBaku.length === 0) return;
+    if (!sensorChart) return;
     
-    // Keep the sensor data legend
-    const sensorLegend = legendContainer.querySelector('.legend-item');
-    legendContainer.innerHTML = '';
-    legendContainer.appendChild(sensorLegend);
+    // The legend will automatically update based on the datasets
+    // We just need to ensure the chart is updated
+    sensorChart.update();
     
-    // Add acuan baku legend items
-    acuanBaku.forEach((acuan, index) => {
-        const legendItem = document.createElement('div');
-        legendItem.className = 'legend-item';
-        
-        const colorClass = index === 0 ? 'acuan-normal' : 
-                          index === 1 ? 'acuan-waspada' : 'acuan-bahaya';
-        
-        legendItem.innerHTML = `
-            <div class="legend-color ${colorClass}"></div>
-            <span>${acuan.min}°C - ${acuan.max}°C (${acuan.status || 'Range'})</span>
-        `;
-        
-        legendContainer.appendChild(legendItem);
-    });
-    
-    console.log('📋 Chart legend updated with acuan baku');
+    console.log('✅ Chart legend updated');
 }
 
 // Update acuan baku and refresh chart
@@ -1042,6 +1712,10 @@ function startAutoRefresh() {
     // Refresh data every 30 seconds
     refreshInterval = setInterval(() => {
         refreshData();
+        // Also update cooling system with latest data
+        if (sensorData && sensorData.length > 0) {
+            updateCoolingSystemWithSensorData(sensorData);
+        }
     }, 30000);
 }
 
@@ -1060,6 +1734,8 @@ function startChartAutoRefresh() {
             
             if (statsResponse.latest_data && statsResponse.latest_data.length > 0) {
                 updateChartWithAcuanBaku(statsResponse.latest_data);
+                // Update cooling system with latest data
+                updateCoolingSystemWithSensorData(statsResponse.latest_data);
                 console.log('✅ Chart auto-refreshed');
             }
         } catch (error) {
@@ -1405,4 +2081,921 @@ async function deleteAcuanBaku(acuanId) {
         console.error('Error deleting acuan baku:', error);
         showNotification('Gagal menghapus acuan baku: ' + error.message, 'error');
     }
+}
+
+// Update chart with acuan baku lines
+function updateChartWithAcuanBaku(data) {
+    if (!sensorChart) {
+        console.warn('❌ Chart not initialized');
+        return;
+    }
+    
+    const chartData = processChartData(data);
+    
+    if (chartData.labels.length === 0) {
+        console.warn('❌ No chart data processed');
+        return;
+    }
+    
+    console.log('📊 Updating chart with data:', chartData.labels.length, 'labels');
+    
+    // Update main sensor data
+    sensorChart.data.labels = chartData.labels;
+    sensorChart.data.datasets[0].data = chartData.values;
+    
+    // Force Y-axis range expansion for better spacing
+    const minVal = Math.min(...chartData.values);
+    const maxVal = Math.max(...chartData.values);
+    const range = maxVal - minVal;
+    
+    if (range < 1) {
+        // Expand Y-axis range artificially
+        const midPoint = (minVal + maxVal) / 2;
+        const expandedMin = Math.floor(midPoint - 1);
+        const expandedMax = Math.ceil(midPoint + 1);
+        
+        // Force Y-axis min and max
+        sensorChart.options.scales.y.min = expandedMin;
+        sensorChart.options.scales.y.max = expandedMax;
+        
+        console.log(`🔄 Forcing Y-axis range: ${expandedMin}°C - ${expandedMax}°C`);
+    }
+    
+    // Ensure acuan baku lines exist
+    if (acuanBaku && acuanBaku.length > 0) {
+        console.log('📋 Acuan baku available, updating lines...');
+        
+        // Check if acuan baku lines exist, if not add them
+        const hasAcuanLines = sensorChart.data.datasets.some(dataset => 
+            dataset.label.includes('Max:') || dataset.label.includes('Min:')
+        );
+        
+        if (!hasAcuanLines) {
+            console.log('📏 No acuan baku lines found, adding them...');
+            addAcuanBakuLines();
+        } else {
+            console.log('📏 Acuan baku lines found, updating data...');
+            updateAcuanBakuLineData(chartData.labels);
+        }
+    } else {
+        console.warn('⚠️ No acuan baku data available for chart');
+    }
+    
+    // Update chart with animation
+    sensorChart.update('active');
+    
+    console.log(`✅ Chart updated with ${chartData.labels.length} data points`);
+    console.log('📊 Current datasets:', sensorChart.data.datasets.map(d => d.label));
+}
+
+// Password strength checker
+function checkPasswordStrength(password) {
+    let strength = 0;
+    let feedback = '';
+    
+    if (password.length >= 8) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    
+    if (strength < 3) {
+        return { level: 'weak', text: 'Password terlalu lemah' };
+    } else if (strength < 4) {
+        return { level: 'medium', text: 'Password cukup kuat' };
+    } else {
+        return { level: 'strong', text: 'Password sangat kuat' };
+    }
+}
+
+// Registration functionality with API integration and demo fallback
+async function handleRegister(e) {
+    e.preventDefault();
+    console.log('🚀 Registration started...');
+    
+    const name = document.getElementById('regName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const telp = document.getElementById('regTelp').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const confirmPassword = document.getElementById('regConfirmPassword').value;
+    
+    console.log('📝 Form data:', { name, email, telp, password: '***', confirmPassword: '***' });
+    
+    // Basic validation
+    if (!name || !email || !telp || !password || !confirmPassword) {
+        console.log('❌ Validation failed: Empty fields');
+        showNotification('Semua field harus diisi', 'error');
+        return;
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        console.log('❌ Email validation failed');
+        showNotification('Format email tidak valid', 'error');
+        return;
+    }
+    
+    // Phone validation
+    const phoneRegex = /^[\+]?[0-9\s\-\(\)]{10,}$/;
+    if (!phoneRegex.test(telp)) {
+        console.log('❌ Phone validation failed');
+        showNotification('Format nomor telepon tidak valid', 'error');
+        return;
+    }
+    
+    // Password validation
+    if (password.length < 6) {
+        console.log('❌ Password too short');
+        showNotification('Password minimal 6 karakter', 'error');
+        return;
+    }
+    
+    if (password !== confirmPassword) {
+        console.log('❌ Password confirmation mismatch');
+        showNotification('Konfirmasi password tidak cocok', 'error');
+        return;
+    }
+    
+    // Check password strength
+    const strength = checkPasswordStrength(password);
+    if (strength.level === 'weak') {
+        console.log('⚠️ Weak password detected');
+        showNotification('Password terlalu lemah. Gunakan kombinasi huruf besar, kecil, angka, dan simbol', 'warning');
+    }
+    
+    console.log('✅ All validations passed, proceeding to API call...');
+    
+    // Show loading state
+    const registerBtn = document.querySelector('#registerForm .login-btn');
+    registerBtn.classList.add('loading');
+    registerBtn.innerHTML = '<div class="spinner"></div><span>Memproses...</span>';
+    registerBtn.disabled = true;
+    
+    try {
+        console.log('📡 Calling registration API...');
+        console.log('🌐 API URL:', `${API_BASE_URL}/register-operator`);
+        
+        // Try to call registration API
+        let response;
+        try {
+            response = await fetch(`${API_BASE_URL}/register-operator`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name,
+                    email,
+                    telp,
+                    password
+                })
+            });
+        } catch (fetchError) {
+            console.warn('⚠️ API call failed, using demo mode:', fetchError);
+            
+            // Fallback to demo mode
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate delay
+            
+            // Check if email already exists in demo mode
+            const existingUsers = JSON.parse(localStorage.getItem('demoUsers') || '[]');
+            if (existingUsers.find(u => u.email === email)) {
+                throw new Error('Email sudah terdaftar');
+            }
+            
+            // Create demo user with default status 'Umum'
+            const demoUser = {
+                id: existingUsers.length + 1,
+                name,
+                email,
+                telp,
+                status: 'Umum'  // Default status
+            };
+            
+            existingUsers.push(demoUser);
+            localStorage.setItem('demoUsers', JSON.stringify(existingUsers));
+            
+            console.log('✅ Demo registration successful:', demoUser);
+            
+            // Show success notification
+            showNotification('Registrasi berhasil! (Demo Mode) Status default: Umum. Silakan login dengan akun baru Anda.', 'success');
+            
+            // Switch to login modal
+            setTimeout(() => {
+                console.log('🔄 Switching to login modal...');
+                showLoginModal();
+                // Pre-fill email field
+                document.getElementById('email').value = email;
+            }, 1500);
+            
+            return;
+        }
+        
+        console.log('📊 API Response status:', response.status);
+        console.log('📊 API Response headers:', response.headers);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('❌ API Error:', errorData);
+            throw new Error(errorData.detail || 'Gagal melakukan registrasi');
+        }
+        
+        const result = await response.json();
+        console.log('✅ Registration successful:', result);
+        
+        // Show success notification
+        showNotification(result.message || 'Registrasi berhasil! Status default: Umum. Silakan login dengan akun baru Anda.', 'success');
+        
+        // Switch to login modal
+        setTimeout(() => {
+            console.log('🔄 Switching to login modal...');
+            showLoginModal();
+            // Pre-fill email field
+            document.getElementById('email').value = email;
+        }, 1500);
+        
+    } catch (error) {
+        console.error('❌ Registration error:', error);
+        showNotification('Gagal melakukan registrasi: ' + error.message, 'error');
+    } finally {
+        console.log('🔄 Resetting button state...');
+        // Reset button state
+        registerBtn.classList.remove('loading');
+        registerBtn.innerHTML = '<span>Daftar</span><i class="fas fa-user-plus"></i>';
+        registerBtn.disabled = false;
+    }
+}
+
+// Test registration function for debugging
+function testRegistration() {
+    console.log('🧪 Testing registration process...');
+    
+    // Test form elements
+    const nameInput = document.getElementById('regName');
+    const emailInput = document.getElementById('regEmail');
+    const telpInput = document.getElementById('regTelp');
+    const passwordInput = document.getElementById('regPassword');
+    const confirmPasswordInput = document.getElementById('regConfirmPassword');
+    
+    console.log('📝 Form elements found:', {
+        name: !!nameInput,
+        email: !!emailInput,
+        telp: !!telpInput,
+        password: !!passwordInput,
+        confirmPassword: !!confirmPasswordInput
+    });
+    
+    // Test form submission
+    const registerForm = document.getElementById('registerForm');
+    console.log('📋 Register form found:', !!registerForm);
+    
+    // Test event listener
+    const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+    console.log('🎯 Simulating form submit...');
+    
+    // Fill form with test data
+    if (nameInput) nameInput.value = 'Test Operator';
+    if (emailInput) emailInput.value = 'test@example.com';
+    if (telpInput) telpInput.value = '+628123456789';
+    if (passwordInput) passwordInput.value = 'test123';
+    if (confirmPasswordInput) confirmPasswordInput.value = 'test123';
+    
+    console.log('✅ Test data filled, triggering submit...');
+    
+    // Trigger form submission
+    if (registerForm) {
+        registerForm.dispatchEvent(submitEvent);
+    } else {
+        console.error('❌ Register form not found!');
+    }
+}
+
+// Test API connectivity
+async function testAPIConnectivity() {
+    console.log('🌐 Testing API connectivity...');
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/`);
+        console.log('✅ API root response:', response.status);
+        
+        if (response.ok) {
+            const data = await response.text();
+            console.log('📊 API root data:', data);
+        }
+    } catch (error) {
+        console.error('❌ API connectivity test failed:', error);
+        console.log('💡 This means the backend is not running or not accessible');
+    }
+}
+
+// ===== COOLING SYSTEM CONTROL FUNCTIONS =====
+
+/**
+ * Check if current user has admin privileges
+ * @returns {boolean} True if user is admin, false otherwise
+ */
+function isUserAdmin() {
+    if (!currentUser || !currentUser.status) {
+        console.log('⚠️ No user logged in or missing status');
+        return false;
+    }
+    
+    const isAdmin = currentUser.status.toLowerCase() === 'admin';
+    console.log(`👤 User status: ${currentUser.status}, Admin privileges: ${isAdmin}`);
+    return isAdmin;
+}
+
+/**
+ * Show admin access denied notification
+ */
+function showAdminAccessDenied() {
+    const userName = currentUser ? currentUser.name : 'Unknown User';
+    const userStatus = currentUser ? currentUser.status : 'Unknown';
+    
+    showNotification(`❌ Akses ditolak! User "${userName}" (${userStatus}) tidak memiliki hak akses Admin untuk mengontrol sistem pendingin`, 'error');
+    console.log(`🚫 Admin access denied for cooling system control. User: ${userName}, Status: ${userStatus}`);
+    
+    // Show additional info in console
+    console.log('💡 Admin privileges required for:');
+    console.log('   - Manual cooling system control');
+    console.log('   - System settings modification');
+    console.log('💡 Non-admin users can still:');
+    console.log('   - View system status');
+    console.log('   - Monitor temperature readings');
+    console.log('   - See system alerts');
+}
+
+/**
+ * Toggle the cooling system on/off
+ * @param {HTMLInputElement} toggle - The toggle switch element
+ */
+function toggleCoolingSystem(toggle) {
+    // Check admin privileges
+    if (!isUserAdmin()) {
+        showAdminAccessDenied();
+        // Reset toggle to previous state
+        toggle.checked = !toggle.checked;
+        return;
+    }
+    
+    const isOn = toggle.checked;
+    coolingSystemState.isOn = isOn;
+    
+    // Update UI
+    updateCoolingSystemUI();
+    
+    // Update status
+    const statusElement = document.getElementById('coolingSystemStatus');
+    if (statusElement) {
+        if (isOn) {
+            statusElement.textContent = 'COOLING';
+            statusElement.className = 'status-badge status-cooling';
+        } else {
+            statusElement.textContent = 'OFF';
+            statusElement.className = 'status-badge status-idle';
+        }
+    }
+    
+    // Update toggle label
+    const labelElement = document.getElementById('coolingStatus');
+    if (labelElement) {
+        labelElement.textContent = isOn ? 'ON' : 'OFF';
+    }
+    
+    // Log the action
+    console.log(`❄️ Cooling system ${isOn ? 'turned ON' : 'turned OFF'} by Admin: ${currentUser.name}`);
+    
+    // Show notification
+    showNotification(`Cooling system ${isOn ? 'activated' : 'deactivated'} by Admin`, 'success');
+    
+    // If cooling system is turned ON, stop temperature alert
+    if (isOn && coolingSystemState.alertState.isActive) {
+        console.log('🔇 Cooling system activated - stopping temperature alert');
+        stopTemperatureAlert();
+        showNotification('🔇 Alert suhu kritis dihentikan - sistem pendingin aktif', 'success');
+    }
+    
+
+}
+
+
+
+/**
+ * Automatic cooling system control based on temperature thresholds
+ */
+function automaticCoolingControl() {
+    if (!coolingSystemState.autoMode) {
+        return;
+    }
+    
+    const currentTemp = coolingSystemState.currentTemp;
+    if (currentTemp === null) {
+        console.log('🌡️ No temperature data available for automatic control');
+        return;
+    }
+    
+    const { min, max } = coolingSystemState.thresholds;
+    let shouldCool = false;
+    let newStatus = 'idle';
+    
+    // Determine if cooling is needed
+    if (currentTemp > max) {
+        shouldCool = true;
+        newStatus = 'cooling';
+        console.log(`🌡️ Temperature ${currentTemp}°C exceeds maximum threshold ${max}°C - Activating cooling`);
+    } else if (currentTemp < min) {
+        shouldCool = false;
+        newStatus = 'idle';
+        console.log(`🌡️ Temperature ${currentTemp}°C below minimum threshold ${min}°C - Deactivating cooling`);
+    } else {
+        shouldCool = false;
+        newStatus = 'idle';
+        console.log(`🌡️ Temperature ${currentTemp}°C within normal range ${min}-${max}°C - Maintaining idle state`);
+    }
+    
+    // Update cooling system state
+    coolingSystemState.isOn = shouldCool;
+    coolingSystemState.status = newStatus;
+    
+    // Update UI
+    updateCoolingSystemUI();
+    
+    // Update status display
+    const statusElement = document.getElementById('coolingSystemStatus');
+    if (statusElement) {
+        statusElement.textContent = newStatus.toUpperCase();
+        statusElement.className = `status-badge status-${newStatus}`;
+    }
+    
+    // Update cooling toggle (if not disabled)
+    const coolingToggle = document.getElementById('coolingToggle');
+    if (coolingToggle && !coolingToggle.disabled) {
+        coolingToggle.checked = shouldCool;
+    }
+    
+    // Update cooling status label
+    const labelElement = document.getElementById('coolingStatus');
+    if (labelElement) {
+        labelElement.textContent = shouldCool ? 'ON' : 'OFF';
+    }
+    
+    // Show notification for significant changes
+    if (shouldCool && coolingSystemState.status !== 'cooling') {
+        showNotification(`🌡️ High temperature detected (${currentTemp}°C) - Cooling system activated`, 'warning');
+    } else if (!shouldCool && coolingSystemState.status === 'cooling') {
+        showNotification(`🌡️ Temperature normalized (${currentTemp}°C) - Cooling system deactivated`, 'success');
+    }
+}
+
+/**
+ * Update cooling system UI elements
+ */
+function updateCoolingSystemUI() {
+    // Check admin privileges
+    const isAdmin = isUserAdmin();
+    
+    // Update current temperature display
+    const tempElement = document.getElementById('currentTemp');
+    if (tempElement && coolingSystemState.currentTemp !== null) {
+        tempElement.textContent = `${coolingSystemState.currentTemp}°C`;
+    }
+    
+    // Update temperature source
+    const sourceElement = document.getElementById('tempSource');
+    if (sourceElement && coolingSystemState.tempSource) {
+        sourceElement.textContent = coolingSystemState.tempSource;
+    }
+    
+    // Update cooling toggle state
+    const coolingToggle = document.getElementById('coolingToggle');
+    if (coolingToggle) {
+        coolingToggle.checked = coolingSystemState.isOn;
+        // Disable if user is not admin
+        coolingToggle.disabled = !isAdmin;
+        
+        // Add visual indication for non-admin users
+        if (!isAdmin) {
+            coolingToggle.title = '❌ Hanya Admin yang dapat mengontrol sistem pendingin';
+        } else {
+            coolingToggle.title = '🎛️ Kontrol manual sistem pendingin';
+        }
+    }
+    
+    // Update status display
+    const statusElement = document.getElementById('coolingSystemStatus');
+    if (statusElement) {
+        statusElement.textContent = coolingSystemState.status.toUpperCase();
+        
+        // Set appropriate status class
+        let statusClass = 'status-badge status-normal';
+        if (coolingSystemState.status === 'critical') {
+            statusClass = 'status-badge status-error temperature-critical';
+        } else if (coolingSystemState.status === 'cooling') {
+            statusClass = 'status-badge status-cooling';
+        } else if (coolingSystemState.status === 'idle') {
+            statusClass = 'status-badge status-idle';
+        }
+        
+        statusElement.className = statusClass;
+    }
+    
+    // Update admin status indicator
+    updateAdminStatusIndicator();
+}
+
+/**
+ * Update admin status indicator in the UI
+ */
+function updateAdminStatusIndicator() {
+    const isAdmin = isUserAdmin();
+    
+    // Add admin status to the control header
+    const controlHeader = document.querySelector('.control-header p');
+    if (controlHeader) {
+        if (isAdmin) {
+            controlHeader.innerHTML = 'Control the cooling system based on sensor readings <span style="color: #00d4ff; font-weight: bold;">👑 Admin Access</span>';
+        } else {
+            controlHeader.innerHTML = 'Control the cooling system based on sensor readings <span style="color: #ffc107; font-weight: bold;">👁️ View Only</span>';
+        }
+    }
+    
+    // Add admin badge to user info in header
+    const userInfo = document.querySelector('.user-info');
+    if (userInfo && currentUser) {
+        const existingBadge = userInfo.querySelector('.admin-badge');
+        if (existingBadge) {
+            existingBadge.remove();
+        }
+        
+        if (isAdmin) {
+            const adminBadge = document.createElement('span');
+            adminBadge.className = 'admin-badge';
+            adminBadge.innerHTML = '👑 Admin';
+            adminBadge.style.cssText = `
+                background: rgba(0, 212, 255, 0.2);
+                color: #00d4ff;
+                padding: 0.25rem 0.5rem;
+                border-radius: 12px;
+                font-size: 0.8rem;
+                font-weight: bold;
+                margin-left: 0.5rem;
+            `;
+            userInfo.appendChild(adminBadge);
+        }
+    }
+    
+    // Log admin status
+    console.log(`🔐 Admin status check: ${isAdmin ? 'Admin access granted' : 'Limited access - view only'}`);
+}
+
+/**
+ * Log detailed admin status information
+ */
+function logAdminStatus() {
+    if (!currentUser) {
+        console.log('⚠️ No user logged in');
+        return;
+    }
+    
+    const isAdmin = isUserAdmin();
+    console.log('🔐 ===== ADMIN STATUS CHECK =====');
+    console.log(`👤 User: ${currentUser.name}`);
+    console.log(`📧 Email: ${currentUser.email}`);
+    console.log(`🏷️ Status: ${currentUser.status}`);
+    console.log(`🔑 Admin Access: ${isAdmin ? '✅ GRANTED' : '❌ DENIED'}`);
+    
+    if (isAdmin) {
+        console.log('🎯 Admin privileges include:');
+        console.log('   - Manual cooling system control');
+        console.log('   - System settings modification');
+        console.log('   - Full system access');
+    } else {
+        console.log('👁️ Limited access - view only:');
+        console.log('   - Monitor system status');
+        console.log('   - View temperature readings');
+        console.log('   - See system alerts');
+        console.log('   - No control capabilities');
+    }
+    console.log('================================');
+}
+
+/**
+ * Update cooling system with latest sensor data
+ * @param {Array} sensorData - Array of sensor data
+ */
+function updateCoolingSystemWithSensorData(sensorData) {
+    if (!sensorData || sensorData.length === 0) {
+        return;
+    }
+    
+    // Find the most recent temperature reading
+    const latestData = sensorData[0]; // Assuming data is sorted by time (newest first)
+    
+    if (latestData && latestData.nilai !== undefined) {
+        coolingSystemState.currentTemp = latestData.nilai;
+        coolingSystemState.tempSource = latestData.nama_sensor || 'Unknown Sensor';
+        
+        // Update UI
+        updateCoolingSystemUI();
+        
+
+        
+        console.log(`🌡️ Updated cooling system with temperature: ${latestData.nilai}°C from ${latestData.nama_sensor}`);
+    }
+}
+
+/**
+ * Load temperature thresholds from acuan baku
+ */
+async function loadTemperatureThresholds() {
+    try {
+        console.log('🌡️ Loading temperature thresholds from acuan baku...');
+        
+        const response = await fetch(`${API_BASE_URL}/acuan-baku`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const acuanData = await response.json();
+        
+        if (acuanData && acuanData.length > 0) {
+            // Find temperature-related acuan baku
+            const tempAcuan = acuanData.find(item => 
+                item.nama_acuan && 
+                (item.nama_acuan.toLowerCase().includes('suhu') || 
+                 item.nama_acuan.toLowerCase().includes('temperature') ||
+                 item.nama_acuan.toLowerCase().includes('temp'))
+            );
+            
+            if (tempAcuan) {
+                // Extract min and max values from acuan baku
+                const minValue = parseFloat(tempAcuan.nilai_min) || null;
+                const maxValue = parseFloat(tempAcuan.nilai_max) || null;
+                
+                coolingSystemState.thresholds.min = minValue;
+                coolingSystemState.thresholds.max = maxValue;
+                
+                console.log(`✅ Temperature thresholds loaded from acuan baku: Min=${minValue}°C, Max=${maxValue}°C`);
+                console.log(`📋 Acuan baku source: ${tempAcuan.nama_acuan}`);
+                
+                // Update UI to show current thresholds
+                updateThresholdDisplay();
+                
+            } else {
+                console.log('⚠️ No temperature-related acuan baku found, using default thresholds');
+                // Set default thresholds if none found
+                coolingSystemState.thresholds.min = 20;
+                coolingSystemState.thresholds.max = 35;
+            }
+        } else {
+            console.log('⚠️ No acuan baku data available, using default thresholds');
+            // Set default thresholds if no data
+            coolingSystemState.thresholds.min = 20;
+            coolingSystemState.thresholds.max = 35;
+        }
+        
+    } catch (error) {
+        console.error('❌ Error loading temperature thresholds:', error);
+        console.log('⚠️ Using default thresholds due to error');
+        // Set default thresholds on error
+        coolingSystemState.thresholds.min = 20;
+        coolingSystemState.thresholds.max = 35;
+    }
+}
+
+/**
+ * Update threshold display in UI
+ */
+function updateThresholdDisplay() {
+    const { min, max } = coolingSystemState.thresholds;
+    
+    // Update threshold info in the control section
+    const thresholdInfo = document.querySelector('.threshold-info');
+    if (thresholdInfo) {
+        thresholdInfo.innerHTML = `
+            <div class="threshold-item">
+                <span class="threshold-label">Min:</span>
+                <span class="threshold-value">${min !== null ? min + '°C' : 'N/A'}</span>
+            </div>
+            <div class="threshold-item">
+                <span class="threshold-label">Max:</span>
+                <span class="threshold-value">${max !== null ? max + '°C' : 'N/A'}</span>
+            </div>
+        `;
+    }
+    
+    // Log threshold update
+    console.log(`📊 Threshold display updated: Min=${min}°C, Max=${max}°C`);
+}
+
+/**
+ * Check temperature thresholds and trigger alerts
+ */
+function checkTemperatureThresholds() {
+    const currentTemp = coolingSystemState.currentTemp;
+    if (currentTemp === null) return;
+    
+    const { min, max } = coolingSystemState.thresholds;
+    
+    // Check if thresholds are loaded
+    if (max === null) {
+        console.log('⚠️ Temperature thresholds not loaded yet, skipping check');
+        return;
+    }
+    
+    // Check if temperature exceeds critical threshold
+    if (currentTemp > max) {
+        if (!coolingSystemState.alertState.isActive) {
+            console.log(`🚨 CRITICAL TEMPERATURE ALERT: ${currentTemp}°C exceeds maximum threshold ${max}°C`);
+            startTemperatureAlert();
+        }
+        
+        // Update status to critical
+        coolingSystemState.status = 'critical';
+        
+        // Show notification
+        showNotification(`🚨 SUHU KRITIS! ${currentTemp}°C melewati batas maksimum acuan baku ${max}°C`, 'error');
+        
+    } else if (min !== null && currentTemp < min) {
+        // Temperature is below minimum - safe zone
+        if (coolingSystemState.alertState.isActive) {
+            console.log(`✅ Temperature normalized: ${currentTemp}°C below minimum threshold ${min}°C`);
+            stopTemperatureAlert();
+        }
+        
+        coolingSystemState.status = 'idle';
+        
+    } else {
+        // Temperature within normal range
+        if (coolingSystemState.alertState.isActive) {
+            console.log(`✅ Temperature normalized: ${currentTemp}°C within normal range (${min || 'N/A'}-${max}°C)`);
+            stopTemperatureAlert();
+        }
+        
+        coolingSystemState.status = 'normal';
+    }
+    
+    // Update UI
+    updateCoolingSystemUI();
+}
+
+/**
+ * Start temperature alert with repeating audio
+ */
+function startTemperatureAlert() {
+    if (coolingSystemState.alertState.isActive) return;
+    
+    console.log('🔊 Starting temperature alert system...');
+    
+    // Set alert state
+    coolingSystemState.alertState.isActive = true;
+    coolingSystemState.alertState.isAcknowledged = false;
+    
+    // Show alert banner
+    const alertBanner = document.getElementById('temperatureAlertBanner');
+    if (alertBanner) {
+        alertBanner.classList.remove('hidden');
+    }
+    
+    // Start repeating audio alert
+    const audioElement = document.getElementById('temperatureAlert');
+    if (audioElement) {
+        // Play audio immediately
+        audioElement.play().catch(e => console.log('Audio play failed:', e));
+        
+        // Set up repeating audio every 3 seconds
+        coolingSystemState.alertState.audioInterval = setInterval(() => {
+            if (coolingSystemState.alertState.isActive && !coolingSystemState.alertState.isAcknowledged) {
+                audioElement.currentTime = 0; // Reset audio to start
+                audioElement.play().catch(e => console.log('Audio repeat failed:', e));
+                console.log('🔊 Playing temperature alert audio...');
+            }
+        }, 3000);
+    }
+    
+    // Add event listener for acknowledge button
+    const acknowledgeBtn = document.getElementById('acknowledgeAlert');
+    if (acknowledgeBtn) {
+        acknowledgeBtn.onclick = acknowledgeTemperatureAlert;
+    }
+    
+    // Update last alert time
+    coolingSystemState.alertState.lastAlertTime = Date.now();
+}
+
+/**
+ * Stop temperature alert
+ */
+function stopTemperatureAlert() {
+    if (!coolingSystemState.alertState.isActive) return;
+    
+    console.log('🔇 Stopping temperature alert system...');
+    
+    // Clear audio interval
+    if (coolingSystemState.alertState.audioInterval) {
+        clearInterval(coolingSystemState.alertState.audioInterval);
+        coolingSystemState.alertState.audioInterval = null;
+    }
+    
+    // Stop audio
+    const audioElement = document.getElementById('temperatureAlert');
+    if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+    }
+    
+    // Hide alert banner
+    const alertBanner = document.getElementById('temperatureAlertBanner');
+    if (alertBanner) {
+        alertBanner.classList.add('hidden');
+    }
+    
+    // Reset alert state
+    coolingSystemState.alertState.isActive = false;
+    coolingSystemState.alertState.isAcknowledged = false;
+}
+
+/**
+ * Acknowledge temperature alert (user clicked acknowledge button)
+ */
+function acknowledgeTemperatureAlert() {
+    console.log('✅ Temperature alert acknowledged by user');
+    
+    // Mark as acknowledged
+    coolingSystemState.alertState.isAcknowledged = true;
+    
+    // Stop audio but keep banner visible
+    const audioElement = document.getElementById('temperatureAlert');
+    if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+    }
+    
+    // Clear audio interval
+    if (coolingSystemState.alertState.audioInterval) {
+        clearInterval(coolingSystemState.alertState.audioInterval);
+        coolingSystemState.alertState.audioInterval = null;
+    }
+    
+    // Update banner text
+    const alertText = document.querySelector('.alert-text');
+    if (alertText) {
+        alertText.textContent = '⚠️ SUHU KRITIS! Sistem pendingin perlu diaktifkan (Alert diakui)';
+    }
+    
+    // Change acknowledge button to reset button
+    const acknowledgeBtn = document.getElementById('acknowledgeAlert');
+    if (acknowledgeBtn) {
+        acknowledgeBtn.innerHTML = '<i class="fas fa-redo"></i> Reset Alert';
+        acknowledgeBtn.onclick = resetTemperatureAlert;
+    }
+    
+    // Show notification
+    showNotification('✅ Alert suhu kritis diakui. Audio dihentikan.', 'success');
+}
+
+/**
+ * Reset temperature alert (restart audio)
+ */
+function resetTemperatureAlert() {
+    console.log('🔄 Resetting temperature alert...');
+    
+    // Reset acknowledge state
+    coolingSystemState.alertState.isAcknowledged = false;
+    
+    // Restart audio alert
+    startTemperatureAlert();
+    
+    // Show notification
+    showNotification('🔊 Alert suhu kritis diaktifkan kembali', 'warning');
+}
+
+/**
+ * Initialize cooling system control
+ */
+function initializeCoolingSystem() {
+    console.log('❄️ Initializing cooling system control...');
+    
+    // Set initial state
+    coolingSystemState.isOn = false;
+    coolingSystemState.status = 'idle';
+    
+    // Initialize alert system
+    coolingSystemState.alertState.isActive = false;
+    coolingSystemState.alertState.isAcknowledged = false;
+    coolingSystemState.alertState.audioInterval = null;
+    
+    // Hide alert banner initially
+    const alertBanner = document.getElementById('temperatureAlertBanner');
+    if (alertBanner) {
+        alertBanner.classList.add('hidden');
+    }
+    
+    // Load temperature thresholds from acuan baku
+    loadTemperatureThresholds();
+    
+    // Update UI
+    updateCoolingSystemUI();
+    
+    console.log('✅ Cooling system control initialized with temperature alert system');
 }

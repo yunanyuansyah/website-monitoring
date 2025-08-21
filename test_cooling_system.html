@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cooling System Control Test</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: linear-gradient(
+          135deg,
+          #0a0a0a 0%,
+          #1a1a2e 50%,
+          #16213e 100%
+        );
+        color: #ffffff;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+      }
+
+      .test-container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .test-header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .test-header h1 {
+        color: #00d4ff;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .test-header p {
+        color: #b0b0b0;
+        font-size: 1.1rem;
+      }
+
+      .test-info {
+        background: rgba(26, 26, 46, 0.8);
+        border: 2px solid rgba(0, 212, 255, 0.3);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+      }
+
+      .test-info h3 {
+        color: #00d4ff;
+        margin-bottom: 1rem;
+      }
+
+      .test-info ul {
+        color: #b0b0b0;
+        line-height: 1.6;
+      }
+
+      .test-info li {
+        margin-bottom: 0.5rem;
+      }
+
+      .demo-section {
+        background: rgba(26, 26, 46, 0.8);
+        border: 2px solid rgba(0, 212, 255, 0.3);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+      }
+
+      .demo-section h3 {
+        color: #00d4ff;
+        margin-bottom: 1rem;
+      }
+
+      .demo-controls {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+
+      .demo-btn {
+        background: rgba(0, 212, 255, 0.2);
+        border: 2px solid rgba(0, 212, 255, 0.3);
+        color: #00d4ff;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: bold;
+      }
+
+      .demo-btn:hover {
+        background: rgba(0, 212, 255, 0.3);
+        border-color: rgba(0, 212, 255, 0.5);
+        transform: translateY(-2px);
+      }
+
+      .demo-btn.danger {
+        background: rgba(255, 59, 48, 0.2);
+        border-color: rgba(255, 59, 48, 0.3);
+        color: #ff3b30;
+      }
+
+      .demo-btn.danger:hover {
+        background: rgba(255, 59, 48, 0.3);
+        border-color: rgba(255, 59, 48, 0.5);
+      }
+
+      .demo-btn.success {
+        background: rgba(52, 199, 89, 0.2);
+        border-color: rgba(52, 199, 89, 0.3);
+        color: #34c759;
+      }
+
+      .demo-btn.success:hover {
+        background: rgba(52, 199, 89, 0.3);
+        border-color: rgba(52, 199, 89, 0.5);
+      }
+
+      .status-display {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+      }
+
+      .status-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .status-item:last-child {
+        border-bottom: none;
+      }
+
+      .status-label {
+        font-weight: bold;
+        color: #00d4ff;
+      }
+
+      .status-value {
+        color: #ffffff;
+      }
+
+      .back-btn {
+        background: rgba(255, 193, 7, 0.2);
+        border: 2px solid rgba(255, 193, 7, 0.3);
+        color: #ffc107;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: bold;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 1rem;
+      }
+
+      .back-btn:hover {
+        background: rgba(255, 193, 7, 0.3);
+        border-color: rgba(255, 193, 7, 0.5);
+        transform: translateY(-2px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-container">
+      <div class="test-header">
+        <h1>❄️ Cooling System Control Test</h1>
+        <p>Test the cooling system control functionality and toggle switches</p>
+      </div>
+
+      <div class="test-info">
+        <h3>🎯 What This Feature Provides:</h3>
+        <ul>
+          <li>
+            <strong>Manual Control:</strong> Toggle the cooling system on/off
+            manually
+          </li>
+          <li>
+            <strong>Automatic Mode:</strong> System automatically controls
+            cooling based on temperature thresholds
+          </li>
+          <li>
+            <strong>Real-time Monitoring:</strong> Shows current temperature and
+            system status
+          </li>
+          <li>
+            <strong>Smart Thresholds:</strong> Automatically activates cooling
+            when temperature exceeds 35°C
+          </li>
+          <li>
+            <strong>Status Indicators:</strong> Visual feedback for system state
+            (Idle, Cooling, Error)
+          </li>
+          <li>
+            <strong>Notifications:</strong> Alerts when cooling system
+            activates/deactivates
+          </li>
+        </ul>
+      </div>
+
+      <div class="demo-section">
+        <h3>🧪 Demo Controls</h3>
+        <p>
+          Use these buttons to simulate different temperature scenarios and test
+          the cooling system:
+        </p>
+
+        <div class="demo-controls">
+          <button class="demo-btn" onclick="simulateHighTemp()">
+            🌡️ Simulate High Temperature (40°C)
+          </button>
+          <button class="demo-btn" onclick="simulateNormalTemp()">
+            🌡️ Simulate Normal Temperature (25°C)
+          </button>
+          <button class="demo-btn" onclick="simulateLowTemp()">
+            🌡️ Simulate Low Temperature (15°C)
+          </button>
+          <button class="demo-btn danger" onclick="simulateCriticalTemp()">
+            🔥 Simulate Critical Temperature (50°C)
+          </button>
+          <button class="demo-btn success" onclick="resetDemo()">
+            🔄 Reset Demo
+          </button>
+        </div>
+
+        <div class="status-display">
+          <h4>📊 Current System Status:</h4>
+          <div class="status-item">
+            <span class="status-label">Temperature:</span>
+            <span class="status-value" id="demoTemp">25°C</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Cooling System:</span>
+            <span class="status-value" id="demoCooling">OFF</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Auto Mode:</span>
+            <span class="status-value" id="demoAuto">ON</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">System Status:</span>
+            <span class="status-value" id="demoStatus">IDLE</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="demo-section">
+        <h3>🔧 How to Test in Main Application:</h3>
+        <ol style="color: #b0b0b0; line-height: 1.6">
+          <li>Open your main application (<code>index.html</code>)</li>
+          <li>Login with any valid credentials</li>
+          <li>Navigate to the dashboard</li>
+          <li>
+            Look for the "Cooling System Control" section below the stats cards
+          </li>
+          <li>Test the toggle switches for manual control and auto mode</li>
+          <li>Watch the system automatically respond to temperature changes</li>
+          <li>Check the console for detailed logging of all operations</li>
+        </ol>
+      </div>
+
+      <div class="demo-section">
+        <h3>📋 Feature Details:</h3>
+        <ul style="color: #b0b0b0; line-height: 1.6">
+          <li><strong>Temperature Thresholds:</strong> Min: 20°C, Max: 35°C</li>
+          <li>
+            <strong>Auto Mode:</strong> Checks temperature every 30 seconds
+          </li>
+          <li>
+            <strong>Manual Override:</strong> Disabled when auto mode is active
+          </li>
+          <li>
+            <strong>Real-time Updates:</strong> Integrates with existing sensor
+            data refresh
+          </li>
+          <li>
+            <strong>Visual Feedback:</strong> Color-coded status indicators and
+            animations
+          </li>
+          <li>
+            <strong>Console Logging:</strong> Detailed logs for debugging and
+            monitoring
+          </li>
+        </ul>
+      </div>
+
+      <a href="index.html" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Back to Main Application
+      </a>
+    </div>
+
+    <script>
+      // Demo state
+      let demoState = {
+        temperature: 25,
+        cooling: false,
+        autoMode: true,
+        status: "idle",
+      };
+
+      // Update demo display
+      function updateDemoDisplay() {
+        document.getElementById(
+          "demoTemp"
+        ).textContent = `${demoState.temperature}°C`;
+        document.getElementById("demoCooling").textContent = demoState.cooling
+          ? "ON"
+          : "OFF";
+        document.getElementById("demoAuto").textContent = demoState.autoMode
+          ? "ON"
+          : "OFF";
+        document.getElementById("demoStatus").textContent =
+          demoState.status.toUpperCase();
+      }
+
+      // Simulate high temperature
+      function simulateHighTemp() {
+        demoState.temperature = 40;
+        demoState.cooling = true;
+        demoState.status = "cooling";
+        updateDemoDisplay();
+        showDemoNotification(
+          "🌡️ High temperature detected - Cooling system activated!",
+          "warning"
+        );
+      }
+
+      // Simulate normal temperature
+      function simulateNormalTemp() {
+        demoState.temperature = 25;
+        demoState.cooling = false;
+        demoState.status = "idle";
+        updateDemoDisplay();
+        showDemoNotification(
+          "🌡️ Temperature normalized - Cooling system deactivated",
+          "success"
+        );
+      }
+
+      // Simulate low temperature
+      function simulateLowTemp() {
+        demoState.temperature = 15;
+        demoState.cooling = false;
+        demoState.status = "idle";
+        updateDemoDisplay();
+        showDemoNotification(
+          "🌡️ Low temperature detected - No cooling needed",
+          "info"
+        );
+      }
+
+      // Simulate critical temperature
+      function simulateCriticalTemp() {
+        demoState.temperature = 50;
+        demoState.cooling = true;
+        demoState.status = "cooling";
+        updateDemoDisplay();
+        showDemoNotification(
+          "🔥 CRITICAL TEMPERATURE! Cooling system at maximum capacity!",
+          "error"
+        );
+      }
+
+      // Reset demo
+      function resetDemo() {
+        demoState.temperature = 25;
+        demoState.cooling = false;
+        demoState.autoMode = true;
+        demoState.status = "idle";
+        updateDemoDisplay();
+        showDemoNotification("🔄 Demo reset to initial state", "info");
+      }
+
+      // Show demo notification
+      function showDemoNotification(message, type) {
+        const notification = document.createElement("div");
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+                <i class="fas fa-${
+                  type === "success"
+                    ? "check-circle"
+                    : type === "error"
+                    ? "exclamation-circle"
+                    : type === "warning"
+                    ? "exclamation-triangle"
+                    : "info-circle"
+                }"></i>
+                <span>${message}</span>
+            `;
+
+        // Add notification styles
+        notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${
+                  type === "success"
+                    ? "#34c759"
+                    : type === "error"
+                    ? "#ff3b30"
+                    : type === "warning"
+                    ? "#ff9500"
+                    : "#007aff"
+                };
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 1000;
+                animation: slideInRight 0.3s ease-out;
+                max-width: 300px;
+            `;
+
+        document.body.appendChild(notification);
+
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+          notification.style.animation = "slideOutRight 0.3s ease-out";
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.parentNode.removeChild(notification);
+            }
+          }, 300);
+        }, 4000);
+      }
+
+      // Add notification animations
+      const style = document.createElement("style");
+      style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+      document.head.appendChild(style);
+
+      // Initialize demo
+      updateDemoDisplay();
+    </script>
+  </body>
+</html>

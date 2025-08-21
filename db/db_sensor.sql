@@ -31,13 +31,13 @@ CREATE TABLE sensor (
     waktu TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Buat tabel transaksi_op
+-- Buat tabel transaksi_op dengan kolom action yang informatif
 CREATE TABLE transaksi_op (
     id SERIAL PRIMARY KEY,
     tanggal TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     id_sensor INTEGER DEFAULT NULL,
     id_op INTEGER DEFAULT NULL,
-    action SMALLINT DEFAULT 0
+    action TEXT NOT NULL
 );
 
 -- Tambah foreign key constraints
@@ -55,6 +55,9 @@ INSERT INTO acuan_baku (min, max, status) VALUES
 (15.0, 40.0, 'Waspada'),
 (10.0, 45.0, 'Bahaya');
 
+-- Password yang sudah di-hash menggunakan SHA-256
+-- admin123 -> 240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9
+-- op123 -> 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
 INSERT INTO op (name, email, password, telp, status) VALUES 
-('Admin', 'admin@sensor.com', 'admin123', '08123456789', 'Umum'),
-('Operator1', 'op1@sensor.com', 'op123', '08123456788', 'Umum');
+('Admin', 'admin@sensor.com', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', '08123456789', 'Umum'),
+('Operator1', 'op1@sensor.com', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', '08123456788', 'Umum');

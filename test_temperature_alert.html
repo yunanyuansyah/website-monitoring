@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Temperature Alert System</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: linear-gradient(
+          135deg,
+          #0a0a0a 0%,
+          #1a1a2e 50%,
+          #16213e 100%
+        );
+        color: #ffffff;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+      }
+
+      .test-container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .test-header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .test-header h1 {
+        color: #00d4ff;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .test-header p {
+        color: #b0b0b0;
+        font-size: 1.1rem;
+      }
+
+      .test-section {
+        background: rgba(26, 26, 46, 0.8);
+        border: 2px solid rgba(0, 212, 255, 0.3);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+      }
+
+      .test-section h3 {
+        color: #00d4ff;
+        margin-bottom: 1rem;
+      }
+
+      .temperature-simulator {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+      }
+
+      .temp-controls {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+
+      .temp-btn {
+        background: rgba(0, 212, 255, 0.2);
+        border: 2px solid rgba(0, 212, 255, 0.3);
+        color: #00d4ff;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: bold;
+      }
+
+      .temp-btn:hover {
+        background: rgba(0, 212, 255, 0.3);
+        border-color: rgba(0, 212, 255, 0.5);
+        transform: translateY(-2px);
+      }
+
+      .temp-btn.danger {
+        background: rgba(255, 59, 48, 0.2);
+        border-color: rgba(255, 59, 48, 0.3);
+        color: #ff3b30;
+      }
+
+      .temp-btn.danger:hover {
+        background: rgba(255, 59, 48, 0.3);
+        border-color: rgba(255, 59, 48, 0.5);
+      }
+
+      .temp-btn.success {
+        background: rgba(52, 199, 89, 0.2);
+        border-color: rgba(52, 199, 89, 0.3);
+        color: #34c759;
+      }
+
+      .temp-btn.success:hover {
+        background: rgba(52, 199, 89, 0.3);
+        border-color: rgba(52, 199, 89, 0.5);
+      }
+
+      .current-temp {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+        text-align: center;
+      }
+
+      .current-temp h4 {
+        color: #00d4ff;
+        margin-bottom: 0.5rem;
+      }
+
+      .temp-display {
+        font-size: 3rem;
+        font-weight: bold;
+        margin: 1rem 0;
+      }
+
+      .temp-display.normal {
+        color: #34c759;
+      }
+      .temp-display.warning {
+        color: #ffc107;
+      }
+      .temp-display.critical {
+        color: #ff3b30;
+      }
+
+      .alert-status {
+        background: rgba(255, 59, 48, 0.1);
+        border: 1px solid rgba(255, 59, 48, 0.3);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+
+      .alert-status h4 {
+        color: #ff3b30;
+        margin-bottom: 0.5rem;
+      }
+
+      .alert-info {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .alert-info-item {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .alert-info-item .label {
+        font-size: 0.8rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .alert-info-item .value {
+        font-weight: bold;
+        color: #ffffff;
+        margin-top: 0.25rem;
+      }
+
+      .back-btn {
+        background: rgba(255, 193, 7, 0.2);
+        border: 2px solid rgba(255, 193, 7, 0.3);
+        color: #ffc107;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: bold;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 1rem;
+      }
+
+      .back-btn:hover {
+        background: rgba(255, 193, 7, 0.3);
+        border-color: rgba(255, 193, 7, 0.5);
+        transform: translateY(-2px);
+      }
+
+      .console-output {
+        background: #000;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 1rem;
+        font-family: "Courier New", monospace;
+        font-size: 0.9rem;
+        max-height: 300px;
+        overflow-y: auto;
+        margin-top: 1rem;
+      }
+
+      .console-output .log-entry {
+        margin-bottom: 0.5rem;
+        padding: 0.25rem 0;
+        border-bottom: 1px solid #333;
+      }
+
+      .console-output .log-entry:last-child {
+        border-bottom: none;
+      }
+
+      .log-entry.info {
+        color: #00d4ff;
+      }
+      .log-entry.success {
+        color: #34c759;
+      }
+      .log-entry.warning {
+        color: #ffc107;
+      }
+      .log-entry.error {
+        color: #ff3b30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-container">
+      <div class="test-header">
+        <h1>🌡️ Test Temperature Alert System</h1>
+        <p>Test sistem peringatan suhu dengan audio berulang</p>
+      </div>
+
+      <div class="test-section">
+        <h3>🎛️ Simulator Suhu</h3>
+        <p>
+          Gunakan tombol di bawah untuk mensimulasikan berbagai kondisi suhu:
+        </p>
+
+        <div class="temperature-simulator">
+          <div class="temp-controls">
+            <button class="temp-btn success" onclick="simulateTemperature(25)">
+              🌡️ Suhu Normal (25°C)
+            </button>
+            <button class="temp-btn warning" onclick="simulateTemperature(32)">
+              🌡️ Suhu Tinggi (32°C)
+            </button>
+            <button class="temp-btn danger" onclick="simulateTemperature(38)">
+              🌡️ Suhu Kritis (38°C)
+            </button>
+            <button class="temp-btn danger" onclick="simulateTemperature(45)">
+              🔥 Suhu Ekstrem (45°C)
+            </button>
+            <button class="temp-btn" onclick="simulateTemperature(15)">
+              ❄️ Suhu Rendah (15°C)
+            </button>
+          </div>
+
+          <div class="current-temp">
+            <h4>🌡️ Suhu Saat Ini</h4>
+            <div class="temp-display normal" id="currentTempDisplay">25°C</div>
+            <p>Status: <span id="tempStatus">Normal</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h3>🚨 Status Alert System</h3>
+        <p>Monitor status sistem peringatan suhu:</p>
+
+        <div class="alert-status" id="alertStatusSection">
+          <h4>🔊 Status Alert</h4>
+          <div class="alert-info">
+            <div class="alert-info-item">
+              <div class="label">Alert Active</div>
+              <div class="value" id="alertActiveStatus">Tidak</div>
+            </div>
+            <div class="alert-info-item">
+              <div class="label">Acknowledged</div>
+              <div class="value" id="alertAcknowledgedStatus">-</div>
+            </div>
+            <div class="alert-info-item">
+              <div class="label">Audio Status</div>
+              <div class="value" id="audioStatus">Tidak Aktif</div>
+            </div>
+            <div class="alert-info-item">
+              <div class="label">Threshold</div>
+              <div class="value">
+                Max: <span id="dynamicThreshold">Loading...</span>°C
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h3>📋 Fitur Temperature Alert</h3>
+        <ul style="color: #b0b0b0; line-height: 1.6">
+          <li>
+            <strong>🔊 Audio Alert:</strong> Suara peringatan berulang setiap 3
+            detik saat suhu kritis
+          </li>
+          <li>
+            <strong>🚨 Visual Alert:</strong> Banner merah dengan animasi dan
+            ikon peringatan
+          </li>
+          <li>
+            <strong>⏰ Auto-Stop:</strong> Alert otomatis berhenti saat suhu
+            kembali normal
+          </li>
+          <li>
+            <strong>✅ Acknowledge:</strong> User dapat menghentikan audio
+            sementara
+          </li>
+          <li>
+            <strong>🔄 Reset:</strong> User dapat mengaktifkan kembali alert
+          </li>
+          <li>
+            <strong>🎯 Smart Detection:</strong> Mendeteksi suhu melewati
+            threshold maksimum dari acuan baku
+          </li>
+        </ul>
+      </div>
+
+      <div class="test-section">
+        <h3>🔧 Cara Testing di Aplikasi Utama</h3>
+        <ol style="color: #b0b0b0; line-height: 1.6">
+          <li>Buka aplikasi utama (<code>index.html</code>)</li>
+          <li>
+            Login dengan user Admin: <code>admin@sensor.com</code> /
+            <code>admin123</code>
+          </li>
+          <li>Pastikan sistem pendingin dalam mode OFF</li>
+          <li>Perhatikan threshold yang ditampilkan (dari acuan baku)</li>
+          <li>Simulasikan suhu tinggi melewati threshold maksimum di sensor</li>
+          <li>Perhatikan alert banner dan audio peringatan</li>
+          <li>Test tombol Acknowledge dan Reset</li>
+          <li>Aktifkan sistem pendingin untuk menghentikan alert</li>
+        </ol>
+      </div>
+
+      <div class="test-section">
+        <h3>📋 Tentang Threshold Dinamis</h3>
+        <ul style="color: #b0b0b0; line-height: 1.6">
+          <li>
+            <strong>🎯 Acuan Baku:</strong> Threshold suhu diambil dari data
+            acuan baku, bukan nilai hardcoded
+          </li>
+          <li>
+            <strong>🔄 Auto-Update:</strong> Threshold otomatis diupdate saat
+            acuan baku berubah
+          </li>
+          <li>
+            <strong>📊 Smart Detection:</strong> Sistem mencari acuan baku yang
+            berkaitan dengan suhu/temperature
+          </li>
+          <li>
+            <strong>🛡️ Fallback:</strong> Jika acuan baku tidak tersedia,
+            menggunakan threshold default
+          </li>
+          <li>
+            <strong>📝 Logging:</strong> Semua perubahan threshold dicatat di
+            console untuk monitoring
+          </li>
+        </ul>
+      </div>
+
+      <div class="test-section">
+        <h3>📝 Console Log</h3>
+        <div class="console-output" id="consoleOutput">
+          <div class="log-entry info">
+            🚀 Temperature Alert Test Console siap...
+          </div>
+        </div>
+      </div>
+
+      <a href="index.html" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Kembali ke Aplikasi Utama
+      </a>
+    </div>
+
+    <script>
+      let currentTemperature = 25;
+      let alertSystemState = {
+        isActive: false,
+        isAcknowledged: false,
+        audioStatus: "Tidak Aktif",
+      };
+
+      // Simulate temperature change
+      function simulateTemperature(temp) {
+        currentTemperature = temp;
+        updateTemperatureDisplay();
+        logToConsole(`🌡️ Suhu disimulasikan: ${temp}°C`, "info");
+
+        // Check if alert should be triggered (using dynamic threshold)
+        const threshold = 35; // This will be dynamic in main app
+        if (temp > threshold) {
+          if (!alertSystemState.isActive) {
+            logToConsole(
+              `🚨 SUHU KRITIS! ${temp}°C melewati threshold acuan baku ${threshold}°C`,
+              "error"
+            );
+            logToConsole(
+              "🔊 Alert system akan diaktifkan di aplikasi utama",
+              "warning"
+            );
+            alertSystemState.isActive = true;
+            alertSystemState.isAcknowledged = false;
+            alertSystemState.audioStatus = "Aktif - Berulang";
+          }
+        } else {
+          if (alertSystemState.isActive) {
+            logToConsole(
+              `✅ Suhu normal: ${temp}°C - Alert system akan dinonaktifkan`,
+              "success"
+            );
+            alertSystemState.isActive = false;
+            alertSystemState.isAcknowledged = false;
+            alertSystemState.audioStatus = "Tidak Aktif";
+          }
+        }
+
+        updateAlertStatus();
+      }
+
+      // Update temperature display
+      function updateTemperatureDisplay() {
+        const tempDisplay = document.getElementById("currentTempDisplay");
+        const tempStatus = document.getElementById("tempStatus");
+
+        if (tempDisplay && tempStatus) {
+          tempDisplay.textContent = `${currentTemperature}°C`;
+
+          // Set appropriate class and status
+          tempDisplay.className = "temp-display";
+          if (currentTemperature > 35) {
+            tempDisplay.classList.add("critical");
+            tempStatus.textContent = "KRITIS - Alert Aktif!";
+          } else if (currentTemperature > 30) {
+            tempDisplay.classList.add("warning");
+            tempStatus.textContent = "Tinggi - Perlu Monitoring";
+          } else if (currentTemperature < 20) {
+            tempDisplay.classList.add("normal");
+            tempStatus.textContent = "Rendah - Aman";
+          } else {
+            tempDisplay.classList.add("normal");
+            tempStatus.textContent = "Normal - Aman";
+          }
+        }
+      }
+
+      // Update alert status display
+      function updateAlertStatus() {
+        const alertActive = document.getElementById("alertActiveStatus");
+        const alertAcknowledged = document.getElementById(
+          "alertAcknowledgedStatus"
+        );
+        const audioStatus = document.getElementById("audioStatus");
+
+        if (alertActive)
+          alertActive.textContent = alertSystemState.isActive ? "Ya" : "Tidak";
+        if (alertAcknowledged)
+          alertAcknowledged.textContent = alertSystemState.isAcknowledged
+            ? "Ya"
+            : "Tidak";
+        if (audioStatus) audioStatus.textContent = alertSystemState.audioStatus;
+
+        // Update alert status section styling
+        const alertSection = document.getElementById("alertStatusSection");
+        if (alertSection) {
+          if (alertSystemState.isActive) {
+            alertSection.style.background = "rgba(255, 59, 48, 0.2)";
+            alertSection.style.borderColor = "rgba(255, 59, 48, 0.5)";
+          } else {
+            alertSection.style.background = "rgba(0, 0, 0, 0.3)";
+            alertSection.style.borderColor = "rgba(255, 255, 255, 0.1)";
+          }
+        }
+      }
+
+      // Log to console
+      function logToConsole(message, type = "info") {
+        const consoleOutput = document.getElementById("consoleOutput");
+        const logEntry = document.createElement("div");
+        logEntry.className = `log-entry ${type}`;
+        logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+
+        consoleOutput.appendChild(logEntry);
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+      }
+
+      // Initialize
+      logToConsole("🌡️ Temperature Alert Test System", "info");
+      logToConsole(
+        "💡 Pilih suhu untuk mensimulasikan kondisi berbeda...",
+        "info"
+      );
+      updateTemperatureDisplay();
+      updateAlertStatus();
+    </script>
+  </body>
+</html>

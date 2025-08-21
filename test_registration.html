@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Registrasi Operator</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input[type="text"],
+      input[type="email"],
+      input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      .result {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 5px;
+        white-space: pre-wrap;
+      }
+      .success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+      .error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+      .section {
+        margin-bottom: 40px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .section h3 {
+        margin-top: 0;
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Test API Sensor Monitoring</h1>
+
+      <div class="section">
+        <h3>1. Registrasi Operator Baru</h3>
+        <form id="registrationForm">
+          <div class="form-group">
+            <label for="name">Nama:</label>
+            <input type="text" id="name" name="name" required />
+          </div>
+          <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required />
+          </div>
+          <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required />
+          </div>
+          <div class="form-group">
+            <label for="telp">Telepon (opsional):</label>
+            <input type="text" id="telp" name="telp" />
+          </div>
+          <div class="form-group">
+            <label for="status">Status:</label>
+            <input type="text" id="status" name="status" value="Umum" />
+          </div>
+          <button type="submit">Registrasi Operator</button>
+        </form>
+        <div id="registrationResult" class="result" style="display: none"></div>
+      </div>
+
+      <div class="section">
+        <h3>2. Lihat Semua Operator</h3>
+        <button onclick="getOperators()">Tampilkan Operator</button>
+        <div id="operatorsResult" class="result" style="display: none"></div>
+      </div>
+
+      <div class="section">
+        <h3>3. Lihat Transaksi Operator</h3>
+        <button onclick="getTransactions()">Tampilkan Transaksi</button>
+        <div id="transactionsResult" class="result" style="display: none"></div>
+      </div>
+
+      <div class="section">
+        <h3>4. Test Sensor Data</h3>
+        <form id="sensorForm">
+          <div class="form-group">
+            <label for="sensorName">Nama Sensor:</label>
+            <input
+              type="text"
+              id="sensorName"
+              name="sensorName"
+              value="DHT11"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="sensorValue">Nilai Sensor:</label>
+            <input
+              type="text"
+              id="sensorValue"
+              name="sensorValue"
+              value="25.5"
+              required
+            />
+          </div>
+          <button type="submit">Kirim Data Sensor</button>
+        </form>
+        <div id="sensorResult" class="result" style="display: none"></div>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:8000";
+
+      // Registrasi Operator
+      document
+        .getElementById("registrationForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const data = {
+            name: formData.get("name"),
+            email: formData.get("email"),
+            password: formData.get("password"),
+            telp: formData.get("telp") || null,
+            status: formData.get("status"),
+          };
+
+          try {
+            const response = await fetch(`${API_BASE}/register-operator`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+            const resultDiv = document.getElementById("registrationResult");
+            resultDiv.style.display = "block";
+
+            if (response.ok) {
+              resultDiv.className = "result success";
+              resultDiv.textContent = `SUCCESS: ${JSON.stringify(
+                result,
+                null,
+                2
+              )}`;
+            } else {
+              resultDiv.className = "result error";
+              resultDiv.textContent = `ERROR: ${JSON.stringify(
+                result,
+                null,
+                2
+              )}`;
+            }
+          } catch (error) {
+            const resultDiv = document.getElementById("registrationResult");
+            resultDiv.style.display = "block";
+            resultDiv.className = "result error";
+            resultDiv.textContent = `ERROR: ${error.message}`;
+          }
+        });
+
+      // Get Operators
+      async function getOperators() {
+        try {
+          const response = await fetch(`${API_BASE}/operators`);
+          const result = await response.json();
+          const resultDiv = document.getElementById("operatorsResult");
+          resultDiv.style.display = "block";
+
+          if (response.ok) {
+            resultDiv.className = "result success";
+            resultDiv.textContent = `SUCCESS: ${JSON.stringify(
+              result,
+              null,
+              2
+            )}`;
+          } else {
+            resultDiv.className = "result error";
+            resultDiv.textContent = `ERROR: ${JSON.stringify(result, null, 2)}`;
+          }
+        } catch (error) {
+          const resultDiv = document.getElementById("operatorsResult");
+          resultDiv.style.display = "block";
+          resultDiv.className = "result error";
+          resultDiv.textContent = `ERROR: ${error.message}`;
+        }
+      }
+
+      // Get Transactions
+      async function getTransactions() {
+        try {
+          const response = await fetch(`${API_BASE}/transactions`);
+          const result = await response.json();
+          const resultDiv = document.getElementById("transactionsResult");
+          resultDiv.style.display = "block";
+
+          if (response.ok) {
+            resultDiv.className = "result success";
+            resultDiv.textContent = `SUCCESS: ${JSON.stringify(
+              result,
+              null,
+              2
+            )}`;
+          } else {
+            resultDiv.className = "result error";
+            resultDiv.textContent = `ERROR: ${JSON.stringify(result, null, 2)}`;
+          }
+        } catch (error) {
+          const resultDiv = document.getElementById("transactionsResult");
+          resultDiv.style.display = "block";
+          resultDiv.className = "result error";
+          resultDiv.textContent = `ERROR: ${error.message}`;
+        }
+      }
+
+      // Test Sensor Data
+      document
+        .getElementById("sensorForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const data = {
+            nama_sensor: formData.get("sensorName"),
+            nilai: parseFloat(formData.get("sensorValue")),
+          };
+
+          try {
+            const response = await fetch(`${API_BASE}/sensor-data`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+            const resultDiv = document.getElementById("sensorResult");
+            resultDiv.style.display = "block";
+
+            if (response.ok) {
+              resultDiv.className = "result success";
+              resultDiv.textContent = `SUCCESS: ${JSON.stringify(
+                result,
+                null,
+                2
+              )}`;
+            } else {
+              resultDiv.className = "result error";
+              resultDiv.textContent = `ERROR: ${JSON.stringify(
+                result,
+                null,
+                2
+              )}`;
+            }
+          } catch (error) {
+            const resultDiv = document.getElementById("sensorResult");
+            resultDiv.style.display = "block";
+            resultDiv.className = "result error";
+            resultDiv.textContent = `ERROR: ${error.message}`;
+          }
+        });
+    </script>
+  </body>
+</html>
+

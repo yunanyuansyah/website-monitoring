@@ -12,14 +12,120 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
+    <!-- Loading indicator -->
+    <div
+      id="loadingIndicator"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #0a0a0a;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        color: #00d4ff;
+        font-family: Arial, sans-serif;
+      "
+    >
+      <div style="text-align: center">
+        <div
+          style="
+            width: 50px;
+            height: 50px;
+            border: 3px solid #00d4ff;
+            border-top: 3px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+          "
+        ></div>
+        <h2>Loading Sensor Monitoring System...</h2>
+        <p>Mohon tunggu sebentar</p>
+      </div>
+    </div>
+
+    <!-- Fallback content if JavaScript fails -->
+    <noscript>
+      <div
+        style="
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: #1a1a2e;
+          color: #ff3b30;
+          padding: 2rem;
+          border-radius: 10px;
+          border: 2px solid #ff3b30;
+          text-align: center;
+          font-family: Arial, sans-serif;
+          z-index: 9999;
+        "
+      >
+        <h2>❌ JavaScript Required</h2>
+        <p>Website ini membutuhkan JavaScript untuk berfungsi.</p>
+        <p>Silakan aktifkan JavaScript di browser Anda.</p>
+      </div>
+    </noscript>
+
+    <!-- Temperature Info Section (Initial View) -->
+    <div id="temperatureInfoSection" class="temperature-info-section">
+      <div class="temp-info-container">
+        <div class="temp-info-header">
+          <i class="fas fa-thermometer-half"></i>
+          <h1>Sensor Monitoring System</h1>
+          <p>Real-time temperature monitoring</p>
+        </div>
+
+        <div class="temp-info-content">
+          <div class="current-temp-display">
+            <div class="temp-value">
+              <span id="initialTempValue">--</span>
+              <span class="temp-unit">°C</span>
+            </div>
+            <div class="temp-label">Current Temperature</div>
+            <div class="temp-source" id="initialTempSource">Loading...</div>
+          </div>
+
+          <div class="temp-status">
+            <div class="status-indicator" id="initialStatusIndicator">
+              <i class="fas fa-circle"></i>
+              <span id="initialStatusText">Initializing...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="temp-info-footer">
+          <div class="last-update">
+            <i class="fas fa-clock"></i>
+            <span id="initialLastUpdate">Last update: --</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Login Button (Bottom Right) -->
+      <button
+        id="showLoginBtn"
+        class="floating-login-btn"
+        onclick="showLoginModal()"
+      >
+        <i class="fas fa-sign-in-alt"></i>
+        <span>Login</span>
+      </button>
+    </div>
+
     <!-- Login Modal -->
-    <div id="loginModal" class="modal">
+    <div id="loginModal" class="modal hidden">
       <div class="modal-content">
         <div class="login-header">
-          <i class="fas fa-satellite-dish"></i>
-          <h2>Sensor Monitoring System</h2>
-          <p>Masuk ke dashboard monitoring</p>
+          <i class="fas fa-shield-alt"></i>
+          <h2>Login Monitoring</h2>
+          <p>Masuk ke sistem monitoring sensor</p>
         </div>
+
         <form id="loginForm" class="login-form">
           <div class="input-group">
             <i class="fas fa-envelope"></i>
@@ -34,8 +140,81 @@
             <i class="fas fa-arrow-right"></i>
           </button>
         </form>
+
         <div class="demo-credentials">
           <p>Demo: admin@sensor.com / admin123</p>
+        </div>
+
+        <div class="auth-switch">
+          <p>
+            Belum punya akun?
+            <a href="#" onclick="showRegisterModal()">Daftar di sini</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="login-header">
+          <i class="fas fa-user-plus"></i>
+          <h2>Registrasi Operator</h2>
+          <p>Buat akun baru untuk monitoring sensor</p>
+        </div>
+
+        <form id="registerForm" class="login-form">
+          <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input
+              type="text"
+              id="regName"
+              placeholder="Nama Lengkap"
+              required
+            />
+          </div>
+          <div class="input-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="regEmail" placeholder="Email" required />
+          </div>
+          <div class="input-group">
+            <i class="fas fa-phone"></i>
+            <input
+              type="tel"
+              id="regTelp"
+              placeholder="Nomor Telepon"
+              required
+            />
+          </div>
+          <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input
+              type="password"
+              id="regPassword"
+              placeholder="Password"
+              required
+            />
+          </div>
+          <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input
+              type="password"
+              id="regConfirmPassword"
+              placeholder="Konfirmasi Password"
+              required
+            />
+          </div>
+          <button type="submit" class="login-btn">
+            <span>Daftar</span>
+            <i class="fas fa-user-plus"></i>
+          </button>
+        </form>
+
+        <div class="auth-switch">
+          <p>
+            Sudah punya akun?
+            <a href="#" onclick="showLoginModal()">Login di sini</a>
+          </p>
         </div>
       </div>
     </div>
@@ -55,6 +234,15 @@
               <i class="fas fa-sign-out-alt"></i>
             </button>
           </div>
+          <button
+            id="backToTempBtn"
+            class="back-to-temp-btn"
+            onclick="showTemperatureInfoSection()"
+            title="Kembali ke tampilan suhu"
+          >
+            <i class="fas fa-thermometer-half"></i>
+            <span>View Temp</span>
+          </button>
         </div>
       </header>
 
@@ -109,28 +297,137 @@
           </div>
         </div>
 
+        <!-- Cooling System Control Section -->
+        <div class="control-section">
+          <div class="control-header">
+            <h3><i class="fas fa-snowflake"></i> Cooling System Control</h3>
+            <p>Control the cooling system based on sensor readings</p>
+          </div>
+
+          <!-- Audio elements for alerts -->
+          <audio id="temperatureAlert" preload="auto">
+            <source
+              src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT"
+              type="audio/wav"
+            />
+          </audio>
+
+          <!-- Temperature Alert Banner -->
+          <div id="temperatureAlertBanner" class="alert-banner hidden">
+            <div class="alert-content">
+              <i class="fas fa-exclamation-triangle"></i>
+              <span class="alert-text"
+                >⚠️ SUHU KRITIS! Aktifkan sistem pendingin sekarang!</span
+              >
+              <button id="acknowledgeAlert" class="acknowledge-btn">
+                <i class="fas fa-check"></i> Acknowledge
+              </button>
+            </div>
+          </div>
+          <div class="control-grid">
+            <div class="control-card">
+              <div class="control-icon">
+                <i class="fas fa-thermometer-half"></i>
+              </div>
+              <div class="control-content">
+                <h4>Current Temperature</h4>
+                <p id="currentTemp">--°C</p>
+                <span class="temp-source"
+                  >From: <span id="tempSource">--</span></span
+                >
+              </div>
+            </div>
+            <div class="control-card">
+              <div class="control-icon">
+                <i class="fas fa-snowflake"></i>
+              </div>
+              <div class="control-content">
+                <h4>Cooling System</h4>
+                <div class="toggle-switch-container">
+                  <label class="toggle-switch">
+                    <input
+                      type="checkbox"
+                      id="coolingToggle"
+                      onchange="toggleCoolingSystem(this)"
+                    />
+                    <span class="slider"></span>
+                  </label>
+                  <span class="toggle-label" id="coolingStatus">OFF</span>
+                </div>
+                <p class="control-description">
+                  Manual control of the cooling system
+                </p>
+
+                <!-- Threshold Information -->
+                <div class="threshold-info">
+                  <div class="threshold-item">
+                    <span class="threshold-label">Min:</span>
+                    <span class="threshold-value">Loading...</span>
+                  </div>
+                  <div class="threshold-item">
+                    <span class="threshold-label">Max:</span>
+                    <span class="threshold-value">Loading...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-card">
+              <div class="control-icon">
+                <i class="fas fa-info-circle"></i>
+              </div>
+              <div class="control-content">
+                <h4>System Status</h4>
+                <p id="coolingSystemStatus" class="status-badge status-normal">
+                  Idle
+                </p>
+                <p class="control-description">
+                  Real-time system status and alerts
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Charts Section -->
         <div class="charts-section">
           <div class="chart-container">
             <div class="chart-header">
               <h3>Monitoring Real-time</h3>
               <div class="chart-controls">
-                <button
-                  id="acuanBakuBtn"
-                  class="control-btn"
-                  onclick="openAcuanBakuModal()"
-                >
+                <button id="acuanBakuBtn" onclick="openAcuanBakuModal()">
                   <i class="fas fa-cog"></i>
-                  <span>Acuan Baku</span>
+                  Acuan Baku
                 </button>
-                <button id="refreshBtn" class="control-btn">
+                <button id="refreshBtn" onclick="refreshData()">
                   <i class="fas fa-sync-alt"></i>
                 </button>
-                <select id="timeRange" class="time-select">
-                  <option value="1h">1 Jam</option>
-                  <option value="6h">6 Jam</option>
-                  <option value="24h">24 Jam</option>
-                  <option value="7d">7 Hari</option>
+                <button
+                  id="refreshAcuanBtn"
+                  onclick="forceRefreshAcuanBakuLines()"
+                  title="Refresh Acuan Baku Lines"
+                >
+                  <i class="fas fa-redo"></i>
+                  Refresh Lines
+                </button>
+                <button
+                  id="testRegisterBtn"
+                  onclick="testRegistration()"
+                  title="Test Registration Process"
+                  style="
+                    background: rgba(255, 59, 48, 0.1);
+                    border-color: rgba(255, 59, 48, 0.3);
+                    color: #ff3b30;
+                  "
+                >
+                  <i class="fas fa-bug"></i>
+                  Test Register
+                </button>
+                <select id="timeRange">
+                  <option value="1">1 Jam</option>
+                  <option value="6">6 Jam</option>
+                  <option value="12">12 Jam</option>
+                  <option value="24">24 Jam</option>
                 </select>
               </div>
             </div>
@@ -259,6 +556,58 @@
               </div>
             </form>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div id="adminPanelModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="login-header">
+          <i class="fas fa-users-cog"></i>
+          <h2>Admin Panel</h2>
+          <p>Kelola status user dan akses sistem</p>
+        </div>
+
+        <div class="admin-content">
+          <div class="admin-section">
+            <h3>Daftar User</h3>
+            <div id="userList" class="user-list">
+              <!-- User list will be populated here -->
+            </div>
+          </div>
+
+          <div class="admin-section">
+            <h3>Ubah Status User</h3>
+            <form id="updateStatusForm" class="admin-form">
+              <div class="input-group">
+                <i class="fas fa-user"></i>
+                <select id="updateUserId" required>
+                  <option value="">Pilih User</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <i class="fas fa-user-tag"></i>
+                <select id="updateUserStatus" required>
+                  <option value="">Pilih Status</option>
+                  <option value="Umum">Umum</option>
+                  <option value="Admin">Admin</option>
+                  <option value="Supervisor">Supervisor</option>
+                </select>
+              </div>
+              <button type="submit" class="login-btn">
+                <span>Update Status</span>
+                <i class="fas fa-save"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button onclick="closeAdminPanel()" class="btn-secondary">
+            <i class="fas fa-times"></i>
+            Tutup
+          </button>
         </div>
       </div>
     </div>

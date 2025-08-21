@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test API Simple</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .form-group {
+        margin: 10px 0;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+      }
+      input {
+        width: 300px;
+        padding: 8px;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 5px;
+        background: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      .result {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 5px;
+      }
+      .success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+      }
+      .error {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Test API Sensor Monitoring</h1>
+
+    <h2>1. Test Registrasi Operator</h2>
+    <form id="regForm">
+      <div class="form-group">
+        <label
+          >Nama: <input type="text" id="regName" value="Test User" required
+        /></label>
+      </div>
+      <div class="form-group">
+        <label
+          >Email:
+          <input type="email" id="regEmail" value="test@example.com" required
+        /></label>
+      </div>
+      <div class="form-group">
+        <label
+          >Password:
+          <input type="password" id="regPassword" value="test123" required
+        /></label>
+      </div>
+      <button type="submit">Registrasi</button>
+    </form>
+    <div id="regResult" class="result" style="display: none"></div>
+
+    <h2>2. Test Login Operator</h2>
+    <form id="loginForm">
+      <div class="form-group">
+        <label
+          >Email:
+          <input type="email" id="loginEmail" value="test@example.com" required
+        /></label>
+      </div>
+      <div class="form-group">
+        <label
+          >Password:
+          <input type="password" id="loginPassword" value="test123" required
+        /></label>
+      </div>
+      <button type="submit">Login</button>
+    </form>
+    <div id="loginResult" class="result" style="display: none"></div>
+
+    <h2>3. Test Endpoint Lain</h2>
+    <button onclick="testOperators()">Test /operators</button>
+    <button onclick="testTransactions()">Test /transactions</button>
+    <button onclick="testSensorData()">Test /sensor-data</button>
+    <div id="otherResult" class="result" style="display: none"></div>
+
+    <script>
+      const API_BASE = "http://localhost:8000";
+
+      // Registrasi
+      document
+        .getElementById("regForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const data = {
+            name: document.getElementById("regName").value,
+            email: document.getElementById("regEmail").value,
+            password: document.getElementById("regPassword").value,
+          };
+
+          try {
+            const response = await fetch(`${API_BASE}/register-operator`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+            const resultDiv = document.getElementById("regResult");
+            resultDiv.style.display = "block";
+            resultDiv.className = response.ok
+              ? "result success"
+              : "result error";
+            resultDiv.textContent = response.ok
+              ? `SUCCESS: ${JSON.stringify(result, null, 2)}`
+              : `ERROR: ${JSON.stringify(result, null, 2)}`;
+          } catch (error) {
+            const resultDiv = document.getElementById("regResult");
+            resultDiv.style.display = "block";
+            resultDiv.className = "result error";
+            resultDiv.textContent = `ERROR: ${error.message}`;
+          }
+        });
+
+      // Login
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const data = {
+            email: document.getElementById("loginEmail").value,
+            password: document.getElementById("loginPassword").value,
+          };
+
+          try {
+            const response = await fetch(`${API_BASE}/login`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+            const resultDiv = document.getElementById("loginResult");
+            resultDiv.style.display = "block";
+            resultDiv.className = response.ok
+              ? "result success"
+              : "result error";
+            resultDiv.textContent = response.ok
+              ? `SUCCESS: ${JSON.stringify(result, null, 2)}`
+              : `ERROR: ${JSON.stringify(result, null, 2)}`;
+          } catch (error) {
+            const resultDiv = document.getElementById("loginResult");
+            resultDiv.style.display = "block";
+            resultDiv.className = "result error";
+            resultDiv.textContent = `ERROR: ${error.message}`;
+          }
+        });
+
+      // Test operators
+      async function testOperators() {
+        try {
+          const response = await fetch(`${API_BASE}/operators`);
+          const result = await response.json();
+          const resultDiv = document.getElementById("otherResult");
+          resultDiv.style.display = "block";
+          resultDiv.className = response.ok ? "result success" : "result error";
+          resultDiv.textContent = response.ok
+            ? `SUCCESS /operators: ${JSON.stringify(result, null, 2)}`
+            : `ERROR /operators: ${JSON.stringify(result, null, 2)}`;
+        } catch (error) {
+          const resultDiv = document.getElementById("otherResult");
+          resultDiv.style.display = "block";
+          resultDiv.className = "result error";
+          resultDiv.textContent = `ERROR /operators: ${error.message}`;
+        }
+      }
+
+      // Test transactions
+      async function testTransactions() {
+        try {
+          const response = await fetch(`${API_BASE}/transactions`);
+          const result = await response.json();
+          const resultDiv = document.getElementById("otherResult");
+          resultDiv.style.display = "block";
+          resultDiv.className = response.ok ? "result success" : "result error";
+          resultDiv.textContent = response.ok
+            ? `SUCCESS /transactions: ${JSON.stringify(result, null, 2)}`
+            : `ERROR /transactions: ${JSON.stringify(result, null, 2)}`;
+        } catch (error) {
+          const resultDiv = document.getElementById("otherResult");
+          resultDiv.style.display = "block";
+          resultDiv.className = "result error";
+          resultDiv.textContent = `ERROR /transactions: ${error.message}`;
+        }
+      }
+
+      // Test sensor data
+      async function testSensorData() {
+        try {
+          const data = { nama_sensor: "DHT11", nilai: 25.5 };
+          const response = await fetch(`${API_BASE}/sensor-data`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+
+          const result = await response.json();
+          const resultDiv = document.getElementById("otherResult");
+          resultDiv.style.display = "block";
+          resultDiv.className = response.ok ? "result success" : "result error";
+          resultDiv.textContent = response.ok
+            ? `SUCCESS /sensor-data: ${JSON.stringify(result, null, 2)}`
+            : `ERROR /sensor-data: ${JSON.stringify(result, null, 2)}`;
+        } catch (error) {
+          const resultDiv = document.getElementById("otherResult");
+          resultDiv.style.display = "block";
+          resultDiv.className = "result error";
+          resultDiv.textContent = `ERROR /sensor-data: ${error.message}`;
+        }
+      }
+    </script>
+  </body>
+</html>

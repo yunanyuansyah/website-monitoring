@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Temperature View</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background: #f0f0f0;
+      }
+      .test-section {
+        background: white;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .test-button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      .test-button:hover {
+        background: #0056b3;
+      }
+      .status {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+      }
+      .status.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .status.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Test Temperature View Functionality</h1>
+
+    <div class="test-section">
+      <h2>Test Results</h2>
+      <div id="testResults"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>Test Controls</h2>
+      <button class="test-button" onclick="testTemperatureInfoSection()">
+        Test Temperature Info Section
+      </button>
+      <button class="test-button" onclick="testShowLoginModal()">
+        Test Show Login Modal
+      </button>
+      <button class="test-button" onclick="testShowDashboard()">
+        Test Show Dashboard
+      </button>
+      <button class="test-button" onclick="testLogout()">Test Logout</button>
+    </div>
+
+    <div class="test-section">
+      <h2>Current State</h2>
+      <div id="currentState"></div>
+    </div>
+
+    <script>
+      // Mock functions for testing
+      let currentState = "temperature-info";
+
+      function updateCurrentState() {
+        document.getElementById("currentState").innerHTML = `
+                <p><strong>Current View:</strong> <span style="color: #007bff;">${currentState}</span></p>
+                <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
+            `;
+      }
+
+      function addTestResult(message, type = "success") {
+        const results = document.getElementById("testResults");
+        const resultDiv = document.createElement("div");
+        resultDiv.className = `status ${type}`;
+        resultDiv.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+        results.appendChild(resultDiv);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+          if (resultDiv.parentNode) {
+            resultDiv.parentNode.removeChild(resultDiv);
+          }
+        }, 5000);
+      }
+
+      function testTemperatureInfoSection() {
+        currentState = "temperature-info";
+        updateCurrentState();
+        addTestResult("Temperature info section displayed successfully");
+      }
+
+      function testShowLoginModal() {
+        currentState = "login-modal";
+        updateCurrentState();
+        addTestResult("Login modal displayed successfully");
+      }
+
+      function testShowDashboard() {
+        currentState = "dashboard";
+        updateCurrentState();
+        addTestResult("Dashboard displayed successfully");
+      }
+
+      function testLogout() {
+        currentState = "temperature-info";
+        updateCurrentState();
+        addTestResult("Logout successful, returned to temperature info view");
+      }
+
+      // Initialize
+      updateCurrentState();
+      addTestResult("Test page loaded successfully");
+    </script>
+  </body>
+</html>

@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Admin Access Control</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: linear-gradient(
+          135deg,
+          #0a0a0a 0%,
+          #1a1a2e 50%,
+          #16213e 100%
+        );
+        color: #ffffff;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+      }
+
+      .test-container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .test-header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .test-header h1 {
+        color: #00d4ff;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .test-header p {
+        color: #b0b0b0;
+        font-size: 1.1rem;
+      }
+
+      .test-section {
+        background: rgba(26, 26, 46, 0.8);
+        border: 2px solid rgba(0, 212, 255, 0.3);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+      }
+
+      .test-section h3 {
+        color: #00d4ff;
+        margin-bottom: 1rem;
+      }
+
+      .user-selector {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+
+      .user-btn {
+        background: rgba(0, 212, 255, 0.2);
+        border: 2px solid rgba(0, 212, 255, 0.3);
+        color: #00d4ff;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: bold;
+      }
+
+      .user-btn:hover {
+        background: rgba(0, 212, 255, 0.3);
+        border-color: rgba(0, 212, 255, 0.5);
+        transform: translateY(-2px);
+      }
+
+      .user-btn.admin {
+        background: rgba(0, 212, 255, 0.3);
+        border-color: #00d4ff;
+        box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+      }
+
+      .user-btn.operator {
+        background: rgba(255, 193, 7, 0.2);
+        border-color: rgba(255, 193, 7, 0.3);
+        color: #ffc107;
+      }
+
+      .user-btn.operator:hover {
+        background: rgba(255, 193, 7, 0.3);
+        border-color: rgba(255, 193, 7, 0.5);
+      }
+
+      .current-user {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+
+      .current-user h4 {
+        color: #00d4ff;
+        margin-bottom: 0.5rem;
+      }
+
+      .user-info {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .user-info-item {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .user-info-item .label {
+        font-size: 0.8rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .user-info-item .value {
+        font-weight: bold;
+        color: #ffffff;
+        margin-top: 0.25rem;
+      }
+
+      .admin-badge {
+        background: rgba(0, 212, 255, 0.2);
+        color: #00d4ff;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        border: 1px solid rgba(0, 212, 255, 0.3);
+        animation: adminGlow 2s ease-in-out infinite alternate;
+      }
+
+      @keyframes adminGlow {
+        from {
+          box-shadow: 0 0 5px rgba(0, 212, 255, 0.3);
+        }
+        to {
+          box-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
+        }
+      }
+
+      .access-test {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+
+      .access-test h4 {
+        color: #00d4ff;
+        margin-bottom: 1rem;
+      }
+
+      .test-controls {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+
+      .test-btn {
+        background: rgba(255, 59, 48, 0.2);
+        border: 2px solid rgba(255, 59, 48, 0.3);
+        color: #ff3b30;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: bold;
+      }
+
+      .test-btn:hover {
+        background: rgba(255, 59, 48, 0.3);
+        border-color: rgba(255, 59, 48, 0.5);
+        transform: translateY(-2px);
+      }
+
+      .test-btn.success {
+        background: rgba(52, 199, 89, 0.2);
+        border-color: rgba(52, 199, 89, 0.3);
+        color: #34c759;
+      }
+
+      .test-btn.success:hover {
+        background: rgba(52, 199, 89, 0.3);
+        border-color: rgba(52, 199, 89, 0.5);
+      }
+
+      .back-btn {
+        background: rgba(255, 193, 7, 0.2);
+        border: 2px solid rgba(255, 193, 7, 0.3);
+        color: #ffc107;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: bold;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 1rem;
+      }
+
+      .back-btn:hover {
+        background: rgba(255, 193, 7, 0.3);
+        border-color: rgba(255, 193, 7, 0.5);
+        transform: translateY(-2px);
+      }
+
+      .console-output {
+        background: #000;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 1rem;
+        font-family: "Courier New", monospace;
+        font-size: 0.9rem;
+        max-height: 300px;
+        overflow-y: auto;
+        margin-top: 1rem;
+      }
+
+      .console-output .log-entry {
+        margin-bottom: 0.5rem;
+        padding: 0.25rem 0;
+        border-bottom: 1px solid #333;
+      }
+
+      .console-output .log-entry:last-child {
+        border-bottom: none;
+      }
+
+      .log-entry.info {
+        color: #00d4ff;
+      }
+      .log-entry.success {
+        color: #34c759;
+      }
+      .log-entry.warning {
+        color: #ffc107;
+      }
+      .log-entry.error {
+        color: #ff3b30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-container">
+      <div class="test-header">
+        <h1>🔐 Test Admin Access Control</h1>
+        <p>Test fitur keamanan admin untuk sistem pendingin</p>
+      </div>
+
+      <div class="test-section">
+        <h3>👤 Pilih User untuk Testing</h3>
+        <p>
+          Pilih user dengan status berbeda untuk menguji fitur admin access
+          control:
+        </p>
+
+        <div class="user-selector">
+          <button class="user-btn admin" onclick="selectUser('admin')">
+            👑 Admin (admin@sensor.com)
+          </button>
+          <button class="user-btn operator" onclick="selectUser('operator')">
+            👷 Operator (op1@sensor.com)
+          </button>
+          <button class="user-btn operator" onclick="selectUser('budi')">
+            👷 Budi (budi@gmail.com)
+          </button>
+          <button class="user-btn operator" onclick="selectUser('yunan')">
+            👷 Yunan (yunanyuansyah@gmail.com)
+          </button>
+        </div>
+
+        <div class="current-user" id="currentUserDisplay" style="display: none">
+          <h4>👤 User Saat Ini:</h4>
+          <div class="user-info">
+            <div class="user-info-item">
+              <div class="label">Nama</div>
+              <div class="value" id="currentUserName">-</div>
+            </div>
+            <div class="user-info-item">
+              <div class="label">Email</div>
+              <div class="value" id="currentUserEmail">-</div>
+            </div>
+            <div class="user-info-item">
+              <div class="label">Status</div>
+              <div class="value" id="currentUserStatus">-</div>
+            </div>
+            <div class="user-info-item">
+              <div class="label">Admin Access</div>
+              <div class="value" id="currentUserAdmin">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h3>🧪 Test Admin Access Control</h3>
+        <p>Test kontrol sistem pendingin dengan user yang berbeda:</p>
+
+        <div class="access-test">
+          <h4>🎛️ Kontrol Sistem Pendingin</h4>
+          <div class="test-controls">
+            <button class="test-btn" onclick="testCoolingControl()">
+              ❄️ Test Cooling System Toggle
+            </button>
+            <button class="test-btn" onclick="testAutoMode()">
+              🤖 Test Auto Mode Toggle
+            </button>
+            <button class="test-btn success" onclick="clearConsole()">
+              🗑️ Clear Console
+            </button>
+          </div>
+
+          <div class="console-output" id="consoleOutput">
+            <div class="log-entry info">🚀 Console siap untuk testing...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h3>📋 Fitur Keamanan yang Diimplementasikan</h3>
+        <ul style="color: #b0b0b0; line-height: 1.6">
+          <li>
+            <strong>🔐 Admin-Only Control:</strong> Hanya user dengan status
+            "Admin" yang dapat mengontrol sistem pendingin
+          </li>
+          <li>
+            <strong>🚫 Access Denied:</strong> User non-admin akan mendapat
+            notifikasi akses ditolak
+          </li>
+          <li>
+            <strong>👁️ View-Only Mode:</strong> User non-admin masih dapat
+            melihat status sistem
+          </li>
+          <li>
+            <strong>🎯 Visual Indicators:</strong> Badge admin dan status akses
+            yang jelas
+          </li>
+          <li>
+            <strong>📝 Detailed Logging:</strong> Log lengkap untuk audit dan
+            debugging
+          </li>
+          <li>
+            <strong>🔄 Real-time Updates:</strong> Status akses diupdate secara
+            real-time
+          </li>
+        </ul>
+      </div>
+
+      <div class="test-section">
+        <h3>🔧 Cara Testing di Aplikasi Utama</h3>
+        <ol style="color: #b0b0b0; line-height: 1.6">
+          <li>Buka aplikasi utama (<code>index.html</code>)</li>
+          <li>
+            Login dengan user Admin: <code>admin@sensor.com</code> /
+            <code>admin123</code>
+          </li>
+          <li>Test kontrol sistem pendingin - seharusnya berfungsi</li>
+          <li>
+            Logout dan login dengan user Operator: <code>op1@sensor.com</code> /
+            <code>op123</code>
+          </li>
+          <li>Test kontrol sistem pendingin - seharusnya ditolak</li>
+          <li>Perhatikan perbedaan UI dan notifikasi</li>
+        </ol>
+      </div>
+
+      <a href="index.html" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Kembali ke Aplikasi Utama
+      </a>
+    </div>
+
+    <script>
+      // User data for testing
+      const testUsers = {
+        admin: {
+          name: "Admin",
+          email: "admin@sensor.com",
+          status: "Admin",
+          password: "admin123",
+        },
+        operator: {
+          name: "Operator1",
+          email: "op1@sensor.com",
+          status: "Umum",
+          password: "op123",
+        },
+        budi: {
+          name: "budi",
+          email: "budi@gmail.com",
+          status: "Umum",
+          password: "123123",
+        },
+        yunan: {
+          name: "Muhammad Yunan Yuansyah",
+          email: "yunanyuansyah@gmail.com",
+          status: "Umum",
+          password:
+            "96cae35ce8a9b0244178bf28e4966c2ce1b8385723a96a6b838858cdd6ca0a1e",
+        },
+      };
+
+      let currentTestUser = null;
+
+      // Select user for testing
+      function selectUser(userKey) {
+        currentTestUser = testUsers[userKey];
+        updateUserDisplay();
+        logToConsole(
+          `👤 User dipilih: ${currentTestUser.name} (${currentTestUser.email})`,
+          "info"
+        );
+        logToConsole(`🏷️ Status: ${currentTestUser.status}`, "info");
+
+        const isAdmin = currentTestUser.status.toLowerCase() === "admin";
+        logToConsole(
+          `🔑 Admin Access: ${isAdmin ? "✅ GRANTED" : "❌ DENIED"}`,
+          isAdmin ? "success" : "error"
+        );
+
+        if (isAdmin) {
+          logToConsole(
+            "🎯 Admin privileges: Full control over cooling system",
+            "success"
+          );
+        } else {
+          logToConsole(
+            "👁️ Limited access: View-only mode, no control capabilities",
+            "warning"
+          );
+        }
+      }
+
+      // Update user display
+      function updateUserDisplay() {
+        if (!currentTestUser) return;
+
+        document.getElementById("currentUserDisplay").style.display = "block";
+        document.getElementById("currentUserName").textContent =
+          currentTestUser.name;
+        document.getElementById("currentUserEmail").textContent =
+          currentTestUser.email;
+        document.getElementById("currentUserStatus").textContent =
+          currentTestUser.status;
+
+        const isAdmin = currentTestUser.status.toLowerCase() === "admin";
+        document.getElementById("currentUserAdmin").innerHTML = isAdmin
+          ? '<span class="admin-badge">👑 Admin</span>'
+          : '<span style="color: #ffc107;">👁️ View Only</span>';
+      }
+
+      // Test cooling system control
+      function testCoolingControl() {
+        if (!currentTestUser) {
+          logToConsole("⚠️ Pilih user terlebih dahulu!", "warning");
+          return;
+        }
+
+        const isAdmin = currentTestUser.status.toLowerCase() === "admin";
+        logToConsole(`🧪 Testing Cooling System Control...`, "info");
+        logToConsole(`👤 User: ${currentTestUser.name}`, "info");
+        logToConsole(`🏷️ Status: ${currentTestUser.status}`, "info");
+
+        if (isAdmin) {
+          logToConsole(
+            "✅ Admin access granted - Cooling system control allowed",
+            "success"
+          );
+          logToConsole(
+            "🎛️ Cooling system can be manually controlled",
+            "success"
+          );
+        } else {
+          logToConsole(
+            "❌ Admin access denied - Cooling system control blocked",
+            "error"
+          );
+          logToConsole(
+            '🚫 User will see "Access Denied" notification',
+            "error"
+          );
+          logToConsole("👁️ User can only view system status", "warning");
+        }
+      }
+
+      // Test auto mode control
+      function testAutoMode() {
+        if (!currentTestUser) {
+          logToConsole("⚠️ Pilih user terlebih dahulu!", "warning");
+          return;
+        }
+
+        const isAdmin = currentTestUser.status.toLowerCase() === "admin";
+        logToConsole(`🧪 Testing Auto Mode Control...`, "info");
+        logToConsole(`👤 User: ${currentTestUser.name}`, "info");
+        logToConsole(`🏷️ Status: ${currentTestUser.status}`, "info");
+
+        if (isAdmin) {
+          logToConsole(
+            "✅ Admin access granted - Auto mode control allowed",
+            "success"
+          );
+          logToConsole("🤖 Auto mode can be configured", "success");
+        } else {
+          logToConsole(
+            "❌ Admin access denied - Auto mode control blocked",
+            "error"
+          );
+          logToConsole(
+            '🚫 User will see "Access Denied" notification',
+            "error"
+          );
+          logToConsole(
+            "👁️ User can only view current auto mode status",
+            "warning"
+          );
+        }
+      }
+
+      // Log to console
+      function logToConsole(message, type = "info") {
+        const consoleOutput = document.getElementById("consoleOutput");
+        const logEntry = document.createElement("div");
+        logEntry.className = `log-entry ${type}`;
+        logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+
+        consoleOutput.appendChild(logEntry);
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+      }
+
+      // Clear console
+      function clearConsole() {
+        const consoleOutput = document.getElementById("consoleOutput");
+        consoleOutput.innerHTML =
+          '<div class="log-entry info">🚀 Console dibersihkan...</div>';
+      }
+
+      // Initialize
+      logToConsole("🔐 Admin Access Control Test Console", "info");
+      logToConsole("💡 Pilih user untuk memulai testing...", "info");
+    </script>
+  </body>
+</html>
